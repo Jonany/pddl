@@ -1,36 +1,24 @@
-import Parser from "rss-parser";
-import { detox } from "./src/detox";
+import { differenceInMilliseconds } from "date-fns";
+import type { Opml } from "./src/opml";
 
-const parser = new Parser();
-const feed = await parser.parseURL('https://feed.podbean.com/sermons.graceharbor.net/feed.xml');
-console.log(feed.title, '|', feed.items.length);
+console.log('\n\nLoading OPML file');
 
-for (const item of feed.items.slice(0, 2)) {
-    console.log(item.title, item.pubDate);
-    if (item.title) {
-        const fileName = detox(item.title);
-        console.log(fileName);
+const proc = Bun.spawnSync(["opml", "--file", "feeds.opml", "--json"]);
+const feedsJson = proc.stdout.toString();
 
-        const url = (item.enclosure?.url || item.link);
+if (feedsJson.length > 0) {
+  const feeds: Opml = JSON.parse(feedsJson);
 
-        if (url) {
-            console.log(url);
-            const file = Bun.file(`${fileName}.mp3`);
-            
-            console.log('fetching');
-            const response = await fetch(url, { method: "GET" });
-            
-            console.log('write');
-            await Bun.write(file, response, { createPath: true, });
-            console.log('done write');
-            
-            console.log('before mv spawn');
-            Bun.spawn(["mv", `${fileName}.mp3`, `${fileName}.ogg`], {
-                onExit(proc, exitCode, signalCode, error) {
-                    console.log('done mv spawn');
-                },
-            });
-            console.log('after mv spawn');
-        }
-    }
+  const workerURL = new URL("src/feedWorker.ts", import.meta.url).href;
+  const now = new Date();
+
+  for (const [idx, feed] of feeds.body.outlines.entries()) {
+    const worker = new Worker(workerURL);
+  
+    worker.postMessage({ num: idx, url: feed.xml_url, now: now });
+    worker.onmessage = event => {
+      console.log(idx, 'finished in', differenceInMilliseconds(new Date(), now), event.data);
+    };
+  }
+  
 }
