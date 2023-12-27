@@ -1,0 +1,16 @@
+{
+  "name": "pddl",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "filenamify": "^6.0.0",
+    "rss-parser": "^3.13.0",
+    "slugify": "^1.6.6"
+  }
+}
