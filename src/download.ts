@@ -3,7 +3,7 @@ import { unlink } from "node:fs/promises";
 export const downloadAsOgg = async (
   url: string,
   outputPath: string
-): Promise<boolean> => {
+): Promise<boolean> => { // TODO: Add a more detailed response object
   // TODO: Add option: 'overwrite'
   if (await Bun.file(outputPath).exists()) {
     return true;
