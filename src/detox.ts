@@ -8,5 +8,6 @@ export const detox = (val: string): string => {
       /[\u0028\u0029\u005b\u005d\u007b\u007d]/g,
       '-'
     )
-    .replace(/(\-|_){2,}/g, '$1');
+    .replace(/(\-|_){2,}/g, '$1') // remove repeated - _
+    .replace(/^(\-|_)|(\-|_)$/g, ''); // remove starting and ending - _
 };
