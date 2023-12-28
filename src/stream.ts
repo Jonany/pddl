@@ -25,7 +25,7 @@ export const streamToFfmpeg = async (
 
 const transcodeFromFile = async (inFile: string, inExt: string, outFile: string) => {
   const proc = Bun.spawn(
-    ['ffmpeg',
+    ['lib/ffmpeg',
       '-loglevel', 'warning',
       '-hide_banner',
       '-nostats',
@@ -54,7 +54,7 @@ const transcodeFromPipe = async (inUrl: string, inExt: string, outFile: string) 
   }
 
   const proc = Bun.spawn(
-    ['ffmpeg',
+    ['lib/ffmpeg',
       '-loglevel', 'warning',
       '-hide_banner',
       '-nostats',
