@@ -1,9 +1,12 @@
-import { differenceInMilliseconds } from "date-fns";
+import { differenceInSeconds } from "date-fns";
 import type { Opml } from "./src/opml";
+
+// TODO: Implement schedule loop
 
 console.log('\n\nLoading OPML file');
 
-const proc = Bun.spawnSync(["opml", "--file", "feeds.opml", "--json"]);
+// TODO: Implement OPML import in TypeScript/Bun
+const proc = Bun.spawnSync(["lib/opml", "--file", "pods/feeds.opml", "--json"]);
 const feedsJson = proc.stdout.toString();
 
 if (feedsJson.length > 0) {
@@ -12,12 +15,17 @@ if (feedsJson.length > 0) {
   const workerURL = new URL("src/feedWorker.ts", import.meta.url).href;
   const now = new Date();
 
-  for (const [idx, feed] of feeds.body.outlines.entries()) {
+  const feedTotal = feeds.body.outlines.length;
+  let finishedFeedCount = 0;
+  
+  for (const feed of feeds.body.outlines) {
     const worker = new Worker(workerURL);
   
-    worker.postMessage({ num: idx, url: feed.xml_url, now: now });
+    worker.postMessage({ url: feed.xml_url, });
     worker.onmessage = event => {
-      console.log(idx, 'finished in', differenceInMilliseconds(new Date(), now), event.data);
+      console.log(`'${event.data}' finished in ${differenceInSeconds(new Date(), now)}s`);
+      finishedFeedCount++;
+      console.log(`${finishedFeedCount}/${feedTotal} workers finished`);
     };
   }
   
