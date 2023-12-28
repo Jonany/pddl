@@ -3,7 +3,7 @@ import Parser from "rss-parser";
 import { mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { detox } from "./detox";
-import { streamToFfmpeg } from "./stream";
+import { downloadAsOgg } from "./download";
 
 // prevents TS errors
 declare var self: Worker;
@@ -34,7 +34,7 @@ self.onmessage = async (event: MessageEvent) => {
         const itemUrl = (item.enclosure?.url || item.link);
 
         if (itemUrl) {
-          const success = await streamToFfmpeg(itemUrl, `${feedFolder}/${fileName}.ogg`);
+          const success = await downloadAsOgg(itemUrl, `${feedFolder}/${fileName}.ogg`);
         }
       }
     }

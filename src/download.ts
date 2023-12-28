@@ -1,6 +1,6 @@
 import { unlink } from "node:fs/promises";
 
-export const streamToFfmpeg = async (
+export const downloadAsOgg = async (
   url: string,
   outputPath: string
 ): Promise<boolean> => {
