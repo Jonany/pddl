@@ -1,7 +1,16 @@
 import { differenceInSeconds } from "date-fns";
 import type { Opml } from "./src/opml";
+import { type FeedResult, type FeedRequest, DownloadOrder } from "./src/feed";
 
 // TODO: Implement schedule loop
+
+// TODO: Accept feed options as external input
+const defaultFeedOptions: FeedRequest = {
+  url: '',
+  episodeLimit: 3,
+  episodeOffset: 1,
+  downloadOrder: DownloadOrder.OldestFirst,
+}
 
 console.log('\n\nLoading OPML file');
 
@@ -21,9 +30,9 @@ if (feedsJson.length > 0) {
   for (const feed of feeds.body.outlines) {
     const worker = new Worker(workerURL);
   
-    worker.postMessage({ url: feed.xml_url, });
-    worker.onmessage = event => {
-      console.log(`'${event.data}' finished in ${differenceInSeconds(new Date(), now)}s`);
+    worker.postMessage({ ...defaultFeedOptions, url: feed.xml_url, });
+    worker.onmessage = (event: MessageEvent<FeedResult>) => {
+      console.log(`'${event.data.title}' finished in ${differenceInSeconds(new Date(), now)}s`);
       finishedFeedCount++;
       console.log(`${finishedFeedCount}/${feedTotal} workers finished`);
     };

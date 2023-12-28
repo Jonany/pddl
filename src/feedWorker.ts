@@ -1,31 +1,45 @@
-import { format } from "date-fns";
+import { compareAsc, compareDesc, format } from "date-fns";
 import Parser from "rss-parser";
 import { mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { detox } from "./detox";
 import { downloadAsOgg } from "./download";
+import { DEFAULT_EPISODE_LIMIT, DEFAULT_EPISODE_OFFSET, getValueOrDefault, type FeedRequest, DEFAULT_OUTDIR, DEFAULT_DOWNLOAD_ORDER, DownloadOrder } from "./feed";
 
 // prevents TS errors
 declare var self: Worker;
 
-self.onmessage = async (event: MessageEvent) => {
-  const url = event.data.url;
+self.onmessage = async (event: MessageEvent<FeedRequest>) => {
+  const request = event.data;
 
   const parser = new Parser();
-  const feed = await parser.parseURL(url);
+  const feed = await parser.parseURL(request.url);
 
   if (feed.title) {
     console.log(`'${feed.title}' starting...`);
     
-    // TODO: Add option: 'outdir'
-    const feedFolder = `/home/jonany/src/pddl/pods/${detox(feed.title)}`;
+    const outdir = request.outdir ?? DEFAULT_OUTDIR;
+    const feedFolder = `${outdir}/${detox(feed.title)}`;
 
     if (!existsSync(feedFolder)) {
       await mkdir(feedFolder, { recursive: true });
     }
 
-    // TODO: Add option: 'limit'
-    for (const item of feed.items.slice(0, 2)) {
+    const feedFile = Bun.file(`${feedFolder}/feed.xml`);
+    const response = await fetch(request.url);
+    await Bun.write(feedFile, response);
+
+    const limit = getValueOrDefault(DEFAULT_EPISODE_LIMIT, request.episodeLimit);
+    const offset = getValueOrDefault(DEFAULT_EPISODE_OFFSET, request.episodeOffset);
+
+    const itemsToDownload = feed.items
+      .sort((a, b) => (request.downloadOrder ?? DEFAULT_DOWNLOAD_ORDER) == DownloadOrder.OldestFirst
+        ? compareAsc((a.isoDate ?? ''), (b.isoDate ?? ''))
+        : compareDesc((a.isoDate ?? ''), (b.isoDate ?? ''))
+      )
+      .splice(offset, limit);
+    
+    for (const item of itemsToDownload) {
       if (item.title) {
         console.log(`'${feed.title}' episode '${item.title}' downloading...`);
 
@@ -40,5 +54,5 @@ self.onmessage = async (event: MessageEvent) => {
     }
   }
   
-  postMessage(feed.title);
+  postMessage({ title: feed.title });
 };
