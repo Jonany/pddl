@@ -1,53 +1,126 @@
 import { unlink } from "node:fs/promises";
+import { switchExt } from "./utils";
+import { detox } from "./detox";
+import { format } from "date-fns";
 
-export const downloadAsOgg = async (
-  url: string,
-  outputPath: string
-): Promise<boolean> => { // TODO: Add a more detailed response object
-  // TODO: Add option: 'overwrite'
-  if (await Bun.file(outputPath).exists()) {
-    return true;
-  }
-  const inputExt = url.substring(url.lastIndexOf('.')).replaceAll('.', '')
+const DEFAULT_FFMPEG_ARGS = [
+  '-c:a', 'libopus',
+  '-b:a', '24k',
+  '-ar', '24000',
+  '-ac', '1',
+  '-fps_mode', 'vfr',
+  '-f', 'ogg',
+];
 
-  if (inputExt == 'm4a') {
-    const input = outputPath.replace('.ogg', `.${inputExt}`);
-    const response = await fetch(url);
-    await Bun.write(input, response);
+interface TranscodeRequest {
+  inSource: string;
+  inExt: string;
+  outFile: string;
+  ffmpegArgs: string[];
+};
 
-    await transcodeFromFile(input, inputExt, outputPath);
-  } else {
-    await transcodeFromPipe(url, inputExt, outputPath);
-  }
+export interface ItemDownloadRequest {
+  itemTitle: string;
+  itemUrl: string;
+  itemGuid: string;
+  itemDate: Date;
+  feedTitle: string;
+  path: string;
+  overwrite?: boolean;
+  ffmpegArgs?: string[];
+};
 
-  return true;
+export interface ItemDownloadResult {
+  success: boolean;
+  skipped: boolean;
+  itemGuid: string;
+  itemFileName: string;
+  itemTitle: string;
+};
+
+export interface ItemInvalidDataResult {
+  missingItemTitle?: boolean;
+  missingItemUrl?: boolean;
+};
+
+export interface DownloadRequest {
+  url: string;
+  path: string;
+  overwrite?: boolean;
+  ffmpegArgs?: string[];
+};
+
+export interface DownloadResult {
+  success: boolean;
+  skipped?: boolean;
+};
+
+export const downloadItem = async (request: ItemDownloadRequest): Promise<ItemDownloadResult> => {
+  console.log(`'${request.feedTitle}' episode '${request.itemTitle}' downloading...`);
+
+  const fileName = detox(`${format(request.itemDate, 'yyyy-MM-dd')}_${request.itemTitle}`);
+  const itemFileName = `${fileName}.ogg`;
+
+  const downloadResult = await downloadAsOgg({ url: request.itemUrl, path: `${request.path}/${itemFileName}` });
+
+  return {
+    success: downloadResult.success,
+    skipped: downloadResult.skipped ?? false,
+    itemGuid: request.itemGuid,
+    itemTitle: request.itemTitle,
+    itemFileName,
+  };
 }
 
-const transcodeFromFile = async (inFile: string, inExt: string, outFile: string) => {
+export const downloadAsOgg = async (request: DownloadRequest): Promise<DownloadResult> => {
+  let ffmpegArgs = request.ffmpegArgs;
+  if (ffmpegArgs == undefined || ffmpegArgs.length == 0) {
+    ffmpegArgs = DEFAULT_FFMPEG_ARGS;
+  }
+
+  // TODO: Add option: 'overwrite'
+  if (await Bun.file(request.path).exists()) {
+    return { success: true, skipped: true };
+  }
+  const inputExt = request.url.substring(request.url.lastIndexOf('.') + 1);
+
+  if (inputExt == 'm4a') {
+    const input = switchExt(request.path, inputExt);
+    const response = await fetch(request.url);
+    await Bun.write(input, response);
+
+    await transcodeFromFile({ inSource: input, inExt: inputExt, outFile: request.path, ffmpegArgs });
+  } else {
+    await transcodeFromPipe({ inSource: request.url, inExt: inputExt, outFile: request.path, ffmpegArgs });
+  }
+
+  return { success: true };
+}
+
+// TODO: Add detailed result object
+const transcodeFromFile = async (request: TranscodeRequest) => {
   const proc = Bun.spawn(
     ['lib/ffmpeg',
       '-loglevel', 'warning',
       '-hide_banner',
       '-nostats',
-      '-f', inExt,
-      '-i', inFile,
-      '-c:a', 'libopus',
-      '-b:a', '24k',
-      '-ar', '24000',
-      '-ac', '1',
-      '-fps_mode', 'vfr',
+      '-f', request.inExt,
+      '-i', request.inSource,
+      ...request.ffmpegArgs,
       '-f', 'ogg',
-      outFile,
+      request.outFile,
     ],
   );
 
   await new Response(proc.stdout).text();
-  await unlink(inFile); //deletes the input file
+  await unlink(request.inSource); //deletes the input file
 }
 
-const transcodeFromPipe = async (inUrl: string, inExt: string, outFile: string) => {
-  const response = await fetch(inUrl);
+// TODO: Add detailed result object
+const transcodeFromPipe = async (request: TranscodeRequest) => {
+  const response = await fetch(request.inSource);
 
+  // TODO: Add retry
   if (!response.ok) {
     console.error('Fetch failed');
     return;
@@ -58,15 +131,11 @@ const transcodeFromPipe = async (inUrl: string, inExt: string, outFile: string) 
       '-loglevel', 'warning',
       '-hide_banner',
       '-nostats',
-      '-f', inExt,
+      '-f', request.inExt,
       '-i', 'pipe:0',
-      '-c:a', 'libopus',
-      '-b:a', '24k',
-      '-ar', '24000',
-      '-ac', '1',
-      '-fps_mode', 'vfr',
+      ...request.ffmpegArgs,
       '-f', 'ogg',
-      outFile,
+      request.outFile,
     ],
     { stdin: 'pipe', },
   );

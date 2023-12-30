@@ -3,12 +3,13 @@ import type { Opml } from "./src/opml";
 import { type FeedResult, type FeedRequest, DownloadOrder } from "./src/feed";
 
 // TODO: Implement schedule loop
+// TODO: Implement RSS feed serving
 
 // TODO: Accept feed options as external input
 const defaultFeedOptions: FeedRequest = {
   url: '',
-  episodeLimit: 3,
-  episodeOffset: 1,
+  episodeLimit: 10,
+  episodeOffset: 0,
   downloadOrder: DownloadOrder.OldestFirst,
 }
 
@@ -27,6 +28,10 @@ if (feedsJson.length > 0) {
   const feedTotal = feeds.body.outlines.length;
   let finishedFeedCount = 0;
   
+  // TODO: Rework to a single download/transcode queue instead of splitting by podcast.
+  // That will allow me to throttle more easily.
+  // Also add an archive queue that processes after transcode instead of waiting. That way
+  // if there is an issue, it will still record the successfully downloaded files.
   for (const feed of feeds.body.outlines) {
     const worker = new Worker(workerURL);
   
