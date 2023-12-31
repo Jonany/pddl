@@ -10,9 +10,10 @@ const defaultFeedOptions: FeedRequest = {
   url: '',
   episodeLimit: 10,
   episodeOffset: 0,
-  downloadOrder: DownloadOrder.OldestFirst,
+  downloadOrder: DownloadOrder.NewestFirst,
 }
 
+// TODO: Implement adjustable logging
 console.log('\n\nLoading OPML file');
 
 // TODO: Implement OPML import in TypeScript/Bun
