@@ -9,7 +9,10 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@types/jstoxml": "^2.0.4",
     "date-fns": "^3.0.6",
+    "feed-media": "^5.0.1",
+    "jstoxml": "^3.2.10",
     "rss-parser": "^3.13.0"
   }
 }

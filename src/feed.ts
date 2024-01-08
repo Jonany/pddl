@@ -17,5 +17,5 @@ export const getValueOrDefault = (defaultVal: number, value?: number): number =>
 
 export const DEFAULT_EPISODE_LIMIT: number = 1;
 export const DEFAULT_EPISODE_OFFSET: number = 0;
-export const DEFAULT_OUTDIR: string = '/home/jonany/src/pddl/pods';
+export const DEFAULT_OUTDIR: string = '/home/jonany/Public/podcasts';
 export const DEFAULT_DOWNLOAD_ORDER: DownloadOrder = DownloadOrder.NewestFirst;

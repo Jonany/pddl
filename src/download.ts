@@ -19,11 +19,14 @@ interface TranscodeRequest {
   ffmpegArgs: string[];
 };
 
-export interface ItemDownloadRequest {
-  itemTitle: string;
-  itemUrl: string;
-  itemGuid: string;
-  itemDate: Date;
+export interface DownloadItem {
+  title: string;
+  url: string;
+  date: Date;
+  guid: string;
+};
+
+export interface ItemDownloadRequest extends DownloadItem {
   feedTitle: string;
   path: string;
   overwrite?: boolean;
@@ -33,9 +36,10 @@ export interface ItemDownloadRequest {
 export interface ItemDownloadResult {
   success: boolean;
   skipped: boolean;
-  itemGuid: string;
-  itemFileName: string;
-  itemTitle: string;
+  guid: string;
+  fileName: string;
+  title: string;
+  url: string;
 };
 
 export interface ItemInvalidDataResult {
@@ -56,19 +60,20 @@ export interface DownloadResult {
 };
 
 export const downloadItem = async (request: ItemDownloadRequest): Promise<ItemDownloadResult> => {
-  console.log(`'${request.feedTitle}' episode '${request.itemTitle}' downloading...`);
+  console.log(`'${request.feedTitle}' episode '${request.title}' downloading...`);
 
-  const fileName = detox(`${format(request.itemDate, 'yyyy-MM-dd')}_${request.itemTitle}`);
+  const fileName = detox(`${format(request.date, 'yyyy-MM-dd')}_${request.title}`);
   const itemFileName = `${fileName}.ogg`;
 
-  const downloadResult = await downloadAsOgg({ url: request.itemUrl, path: `${request.path}/${itemFileName}` });
+  const downloadResult = await downloadAsOgg({ url: request.url, path: `${request.path}/${itemFileName}` });
 
   return {
     success: downloadResult.success,
     skipped: downloadResult.skipped ?? false,
-    itemGuid: request.itemGuid,
-    itemTitle: request.itemTitle,
-    itemFileName,
+    guid: request.guid,
+    title: request.title,
+    fileName: itemFileName,
+    url: request.url,
   };
 }
 

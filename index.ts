@@ -8,7 +8,7 @@ import { type FeedResult, type FeedRequest, DownloadOrder } from "./src/feed";
 // TODO: Accept feed options as external input
 const defaultFeedOptions: FeedRequest = {
   url: '',
-  episodeLimit: 10,
+  episodeLimit: 100,
   episodeOffset: 0,
   downloadOrder: DownloadOrder.NewestFirst,
 }

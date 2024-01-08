@@ -1,11 +1,13 @@
-import { compareAsc, compareDesc, format, parseISO } from "date-fns";
+import { compareAsc, compareDesc, parseISO } from "date-fns";
 import Parser from "rss-parser";
 import { mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { detox } from "./detox";
-import { downloadItem, type DownloadResult, type ItemDownloadResult, type ItemInvalidDataResult } from "./download";
+import { downloadItem, type DownloadItem, type ItemDownloadResult } from "./download";
 import { DEFAULT_EPISODE_LIMIT, DEFAULT_EPISODE_OFFSET, getValueOrDefault, type FeedRequest, DEFAULT_OUTDIR, DEFAULT_DOWNLOAD_ORDER, DownloadOrder } from "./feed";
 import { ArchiveItem } from "./archive";
+import { DEFAULT_SERVE_TYPE, DEFAULT_SERVE_URL } from "./serve";
+
 
 // prevents TS errors
 declare var self: Worker;
@@ -20,7 +22,8 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
     console.log(`'${feed.title}' starting...`);
 
     const outdir = request.outdir ?? DEFAULT_OUTDIR;
-    const feedFolder = `${outdir}/${detox(feed.title)}`;
+    const feedName = detox(feed.title);
+    const feedFolder = `${outdir}/${feedName}`;
 
     if (!existsSync(feedFolder)) {
       await mkdir(feedFolder, { recursive: true });
@@ -36,7 +39,7 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
     const defaultPubDate = new Date();
 
     let skippedItems = 0;
-    const itemsToDownload = feed.items
+    const itemsToDownload: DownloadItem[] = feed.items
       // Remove invalid items
       .filter(item => {
         const valid =
@@ -53,20 +56,20 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
       // Build needed data
       .map(item => {
         return {
-          itemTitle: item.title!,
-          itemUrl: (item.enclosure?.url || item.link)!,
-          itemDate: typeof item.isoDate === 'undefined' ? defaultPubDate : parseISO(item.isoDate),
-          itemGuid: item.guid!,
+          title: item.title!,
+          url: (item.enclosure?.url || item.link)!,
+          date: typeof item.isoDate === 'undefined' ? defaultPubDate : parseISO(item.isoDate),
+          guid: item.guid!,
         };
       })
       .sort((a, b) => (request.downloadOrder ?? DEFAULT_DOWNLOAD_ORDER) == DownloadOrder.OldestFirst
-        ? compareAsc(a.itemDate, b.itemDate)
-        : compareDesc(a.itemDate, b.itemDate)
+        ? compareAsc(a.date, b.date)
+        : compareDesc(a.date, b.date)
       )
       .splice(offset, limit);
 
     console.log(`'${feed.title}': Downloading ${itemsToDownload.length} items.`);
-    console.log(`'${feed.title}': Skipping ${skippedItems} invalid items.`);
+    console.warn(`'${feed.title}': Skipping ${skippedItems} invalid items.`);
 
     const downloadResults = await Promise.allSettled(
       itemsToDownload.map(async (item): Promise<ItemDownloadResult> => {
@@ -75,29 +78,60 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
       })
     );
 
-    downloadResults.map(result => {
-      if (result.status === 'fulfilled') {
-        const success = (result as PromiseFulfilledResult<ItemDownloadResult>).value;
-
-        if (success.skipped) {
-          console.log(`'${feed.title}' episode '${success.itemTitle}' exists. Skipping...`);
-        } else {
-          console.log(`'${feed.title}' episode '${success.itemTitle}' downloaded. Archiving...`);
-          const archiveResult = ArchiveItem({
-            archiveFileName,
-            itemFileName: success.itemFileName,
-            itemGuid: success.itemGuid,
-          });
-
-          if (archiveResult.success) {
-            console.log(`'${feed.title}' episode '${success.itemTitle}' Archived.`);
-          }
+    const downloadedItems = downloadResults
+      .filter(result => {
+        if (result.status === 'fulfilled') {
+          return true;
         }
-      } else {
-        const failed = (result as PromiseRejectedResult).reason;
-        console.log(`'${feed.title}' error: ${failed}`);
-      }
+
+        console.warn(`'${feed.title}' error: ${(result as PromiseRejectedResult).reason}`);
+        return false;
+      })
+      .map(fulfilled => (fulfilled as PromiseFulfilledResult<ItemDownloadResult>).value)
+      .filter(item => {
+        if (item.skipped) {
+          console.log(`'${feed.title}' episode '${item.title}' exists. Skipping...`);
+          return false;
+        }
+        return true;
+      })
+      .filter(item => {
+        console.log(`'${feed.title}' episode '${item.title}' downloaded. Archiving...`);
+        const archiveResult = ArchiveItem({
+          archiveFileName,
+          itemFileName: item.fileName,
+          itemGuid: item.guid,
+          itemUrl: item.url,
+        });
+
+        if (archiveResult.success) {
+          console.log(`'${feed.title}' episode '${item.title}' archived.`);
+          return true;
+        }
+
+        console.warn(`'${feed.title}' episode '${item.title}' failed to archive.`);
+        return false;
+      });
+
+    // TODO: Rewrite to reference archive file instead of items downloaded. Also had a step to
+    // validate the file exists to help prevent a bad feed.
+    const archiveFileText = await Bun.file(archiveFileName).text();
+    const feedItems = archiveFileText
+      .split('\n')
+      .map(line => line.split('|'));
+
+    const original = await feedFile.text();
+    let newFeedText = original.replaceAll('type="audio/.*"', `type="${DEFAULT_SERVE_TYPE}"`);
+    feedItems.forEach(item => {
+      const fileName = item[0];
+      // const guid = item[1];
+      const url = item[2];
+      const newUrl = `${DEFAULT_SERVE_URL}/${feedName}/${fileName}`;
+
+      newFeedText = newFeedText.replace(url, newUrl);
     });
+
+    Bun.write(`${feedFolder}/new-feed.xml`, newFeedText);
   }
 
   postMessage({ title: feed.title });
