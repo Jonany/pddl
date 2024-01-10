@@ -20,7 +20,7 @@ console.log('\n\nLoading OPML file');
 
 // TODO: Implement OPML import in TypeScript/Bun
 const feedFile = Bun.env.PDDL_FEED_FILE ?? 'feeds.opml';
-const proc = Bun.spawnSync(["lib/opml", "--file", feedFile, "--json"]);
+const proc = Bun.spawnSync(["opml", "--file", feedFile, "--json"]);
 const feedsJson = proc.stdout.toString();
 
 if (feedsJson.length > 0) {
@@ -45,4 +45,6 @@ if (feedsJson.length > 0) {
       worker.terminate();
     };
   } 
+} else {
+  console.warn('Feed file empty or not found');
 }
