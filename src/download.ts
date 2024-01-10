@@ -106,7 +106,7 @@ export const downloadAsOgg = async (request: DownloadRequest): Promise<DownloadR
 const transcodeFromFile = async (request: TranscodeRequest) => {
   const proc = Bun.spawn(
     ['ffmpeg',
-      '-loglevel', 'warning',
+      '-loglevel', 'quiet',
       '-hide_banner',
       '-nostats',
       '-f', request.inExt,
@@ -133,7 +133,7 @@ const transcodeFromPipe = async (request: TranscodeRequest) => {
 
   const proc = Bun.spawn(
     ['ffmpeg',
-      '-loglevel', 'warning',
+      '-loglevel', 'quiet',
       '-hide_banner',
       '-nostats',
       '-f', request.inExt,
