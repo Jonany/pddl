@@ -68,8 +68,8 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
       )
       .splice(offset, limit);
 
-    console.log(`'${feed.title}': Downloading ${itemsToDownload.length} items.`);
-    console.warn(`'${feed.title}': Skipping ${skippedItems} invalid items.`);
+    // console.log(`'${feed.title}': Downloading ${itemsToDownload.length} items.`);
+    // console.warn(`'${feed.title}': Skipping ${skippedItems} invalid items.`);
 
     const downloadResults = await Promise.allSettled(
       itemsToDownload.map(async (item): Promise<ItemDownloadResult> => {
@@ -90,13 +90,13 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
       .map(fulfilled => (fulfilled as PromiseFulfilledResult<ItemDownloadResult>).value)
       .filter(item => {
         if (item.skipped) {
-          console.log(`'${feed.title}' episode '${item.title}' exists. Skipping...`);
+        //   console.log(`'${feed.title}' episode '${item.title}' exists. Skipping...`);
           return false;
         }
         return true;
       })
       .filter(item => {
-        console.log(`'${feed.title}' episode '${item.title}' downloaded. Archiving...`);
+        // console.log(`'${feed.title}' episode '${item.title}' downloaded. Archiving...`);
         const archiveResult = ArchiveItem({
           archiveFileName,
           itemFileName: item.fileName,
@@ -105,7 +105,7 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
         });
 
         if (archiveResult.success) {
-          console.log(`'${feed.title}' episode '${item.title}' archived.`);
+        //   console.log(`'${feed.title}' episode '${item.title}' archived.`);
           return true;
         }
 
@@ -121,17 +121,18 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
       .map(line => line.split('|'));
 
     const original = await feedFile.text();
-    let newFeedText = original.replaceAll('type="audio/.*"', `type="${DEFAULT_SERVE_TYPE}"`);
+    const serveType = request.serveType ?? DEFAULT_SERVE_TYPE;
+    const serveUrl = request.serveUrl ?? DEFAULT_SERVE_URL;
+    let newFeedText = original.replaceAll('type="audio/.*"', `type="${serveType}"`);
     feedItems.forEach(item => {
       const fileName = item[0];
-      // const guid = item[1];
       const url = item[2];
-      const newUrl = `${DEFAULT_SERVE_URL}/${feedName}/${fileName}`;
+      const newUrl = `${serveUrl}/${feedName}/${fileName}`;
 
       newFeedText = newFeedText.replace(url, newUrl);
     });
 
-    Bun.write(`${feedFolder}/new-feed.xml`, newFeedText);
+    Bun.write(feedFile, newFeedText);
   }
 
   postMessage({ title: feed.title });

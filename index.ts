@@ -5,19 +5,22 @@ import { type FeedResult, type FeedRequest, DownloadOrder } from "./src/feed";
 // TODO: Implement schedule loop
 // TODO: Implement RSS feed serving
 
-// TODO: Accept feed options as external input
 const defaultFeedOptions: FeedRequest = {
   url: '',
-  episodeLimit: 100,
+  episodeLimit: 999,
   episodeOffset: 0,
   downloadOrder: DownloadOrder.NewestFirst,
+  serveUrl: Bun.env.PDDL_SERVE_URL,
+  serveType: Bun.env.PDDL_SERVE_TYPE,
+  outdir: Bun.env.PDDL_OUTDIR,
 }
 
 // TODO: Implement adjustable logging
 console.log('\n\nLoading OPML file');
 
 // TODO: Implement OPML import in TypeScript/Bun
-const proc = Bun.spawnSync(["lib/opml", "--file", "pods/feeds.opml", "--json"]);
+const feedFile = Bun.env.PDDL_FEED_FILE ?? 'feeds.opml';
+const proc = Bun.spawnSync(["lib/opml", "--file", feedFile, "--json"]);
 const feedsJson = proc.stdout.toString();
 
 if (feedsJson.length > 0) {
@@ -31,8 +34,6 @@ if (feedsJson.length > 0) {
   
   // TODO: Rework to a single download/transcode queue instead of splitting by podcast.
   // That will allow me to throttle more easily.
-  // Also add an archive queue that processes after transcode instead of waiting. That way
-  // if there is an issue, it will still record the successfully downloaded files.
   for (const feed of feeds.body.outlines) {
     const worker = new Worker(workerURL);
   
@@ -41,7 +42,7 @@ if (feedsJson.length > 0) {
       console.log(`'${event.data.title}' finished in ${differenceInSeconds(new Date(), now)}s`);
       finishedFeedCount++;
       console.log(`${finishedFeedCount}/${feedTotal} workers finished`);
+      worker.terminate();
     };
-  }
-  
+  } 
 }

@@ -8,6 +8,8 @@ export interface FeedRequest {
     episodeLimit?: number;
     episodeOffset?: number;
     downloadOrder?: DownloadOrder;
+    serveUrl?: string;
+    serveType?: string;
 };
 export interface FeedResult {
     title: string;

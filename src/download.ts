@@ -60,7 +60,7 @@ export interface DownloadResult {
 };
 
 export const downloadItem = async (request: ItemDownloadRequest): Promise<ItemDownloadResult> => {
-  console.log(`'${request.feedTitle}' episode '${request.title}' downloading...`);
+//   console.log(`'${request.feedTitle}' episode '${request.title}' downloading...`);
 
   const fileName = detox(`${format(request.date, 'yyyy-MM-dd')}_${request.title}`);
   const itemFileName = `${fileName}.ogg`;
