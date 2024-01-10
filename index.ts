@@ -24,7 +24,7 @@ const feedFound = await Bun.file(feedFile).exists();
 
 if (feedFound) {
   console.warn(`Using feed file ${feedFile}`);
-  const proc = Bun.spawnSync(["lib/opml", "--file", feedFile, "--json"]);
+  const proc = Bun.spawnSync(["opml", "--file", feedFile, "--json"]);
   const feedsJson = proc.stdout.toString();
 
   if (feedsJson.length > 0) {
