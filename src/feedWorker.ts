@@ -7,6 +7,8 @@ import { downloadItem, type DownloadItem, type ItemDownloadResult } from "./down
 import { DEFAULT_EPISODE_LIMIT, DEFAULT_EPISODE_OFFSET, getValueOrDefault, type FeedRequest, DEFAULT_OUTDIR, DEFAULT_DOWNLOAD_ORDER, DownloadOrder } from "./feed";
 import { ArchiveItem } from "./archive";
 import { DEFAULT_SERVE_TYPE, DEFAULT_SERVE_URL } from "./serve";
+import { SingleBar } from "cli-progress";
+import { cyan } from "ansi-colors";
 
 
 // prevents TS errors
@@ -68,15 +70,24 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
       )
       .splice(offset, limit);
 
-    // console.log(`'${feed.title}': Downloading ${itemsToDownload.length} items.`);
     // console.warn(`'${feed.title}': Skipping ${skippedItems} invalid items.`);
+    const progressBar = new SingleBar({
+      format: `'${feed.title}' ${cyan('{bar}')} {percentage}% {value}/{total} Episodes`,
+      barCompleteChar: '\u2588',
+      barIncompleteChar: '\u2591',
+      hideCursor: true
+    });
+    progressBar.start(itemsToDownload.length, 0);
 
+    let downloaded = 0;
     const downloadResults = await Promise.allSettled(
       itemsToDownload.map(async (item): Promise<ItemDownloadResult> => {
         const result = await downloadItem({ ...item, feedTitle: feed.title ?? '', path: feedFolder });
+        progressBar.increment();
         return result;
       })
     );
+    progressBar.stop();
 
     const downloadedItems = downloadResults
       .filter(result => {
@@ -90,7 +101,7 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
       .map(fulfilled => (fulfilled as PromiseFulfilledResult<ItemDownloadResult>).value)
       .filter(item => {
         if (item.skipped) {
-        //   console.log(`'${feed.title}' episode '${item.title}' exists. Skipping...`);
+          //   console.log(`'${feed.title}' episode '${item.title}' exists. Skipping...`);
           return false;
         }
         return true;
@@ -105,7 +116,7 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
         });
 
         if (archiveResult.success) {
-        //   console.log(`'${feed.title}' episode '${item.title}' archived.`);
+          //   console.log(`'${feed.title}' episode '${item.title}' archived.`);
           return true;
         }
 
