@@ -20,31 +20,38 @@ console.log('\n\nLoading OPML file');
 
 // TODO: Implement OPML import in TypeScript/Bun
 const feedFile = Bun.env.PDDL_FEED_FILE ?? 'feeds.opml';
-const proc = Bun.spawnSync(["opml", "--file", feedFile, "--json"]);
-const feedsJson = proc.stdout.toString();
+const feedFound = await Bun.file(feedFile).exists();
 
-if (feedsJson.length > 0) {
-  const feeds: Opml = JSON.parse(feedsJson);
+if (feedFound) {
+  console.warn(`Using feed file ${feedFile}`);
+  const proc = Bun.spawnSync(["lib/opml", "--file", feedFile, "--json"]);
+  const feedsJson = proc.stdout.toString();
 
-  const workerURL = new URL("src/feedWorker.ts", import.meta.url).href;
-  const now = new Date();
+  if (feedsJson.length > 0) {
+    const feeds: Opml = JSON.parse(feedsJson);
 
-  const feedTotal = feeds.body.outlines.length;
-  let finishedFeedCount = 0;
-  
-  // TODO: Rework to a single download/transcode queue instead of splitting by podcast.
-  // That will allow me to throttle more easily.
-  for (const feed of feeds.body.outlines) {
-    const worker = new Worker(workerURL);
-  
-    worker.postMessage({ ...defaultFeedOptions, url: feed.xml_url, });
-    worker.onmessage = (event: MessageEvent<FeedResult>) => {
-      console.log(`'${event.data.title}' finished in ${differenceInSeconds(new Date(), now)}s`);
-      finishedFeedCount++;
-      console.log(`${finishedFeedCount}/${feedTotal} workers finished`);
-      worker.terminate();
-    };
-  } 
+    const workerURL = new URL("src/feedWorker.ts", import.meta.url).href;
+    const now = new Date();
+
+    const feedTotal = feeds.body.outlines.length;
+    let finishedFeedCount = 0;
+
+    // TODO: Rework to a single download/transcode queue instead of splitting by podcast.
+    // That will allow me to throttle more easily.
+    for (const feed of feeds.body.outlines) {
+      const worker = new Worker(workerURL);
+
+      worker.postMessage({ ...defaultFeedOptions, url: feed.xml_url, });
+      worker.onmessage = (event: MessageEvent<FeedResult>) => {
+        console.log(`'${event.data.title}' finished in ${differenceInSeconds(new Date(), now)}s`);
+        finishedFeedCount++;
+        console.log(`${finishedFeedCount}/${feedTotal} workers finished`);
+        worker.terminate();
+      };
+    }
+  } else {
+    console.warn('Feed file empty');
+  }
 } else {
-  console.warn('Feed file empty or not found');
+  console.warn(`Feed file ${feedFile} does not exist`);
 }
