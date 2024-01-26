@@ -3,7 +3,7 @@ import { mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import Parser from "rss-parser";
 import { detox } from "./detox";
-import { getProgressBar } from "./cli";
+import { startBar } from "./cli";
 import { DEFAULT_DOWNLOAD_ORDER, DEFAULT_EPISODE_LIMIT, DEFAULT_EPISODE_OFFSET, DEFAULT_OUTDIR, DownloadOrder } from "./options";
 
 export interface FeedDownloadRequest {
@@ -28,9 +28,8 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
     const parser = new Parser();
     const feedCount = request.urls.length;
 
-    const progressBar = getProgressBar('Feeds');
+    const progressBar = startBar('Feeds', feedCount);
     console.log('\n');
-    progressBar.start(feedCount, 0);
     const stopWatch = new Date();
 
     let itemsToDownload: FeedItem[] = [];

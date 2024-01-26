@@ -2,7 +2,7 @@ import { unlink } from "node:fs/promises";
 import fastq from "fastq";
 import type { queueAsPromised } from "fastq";
 import { differenceInMinutes } from "date-fns";
-import { getProgressBar } from "./cli";
+import { startBar } from "./cli";
 import type { FeedItem } from "./feed";
 
 const DEFAULT_FFMPEG_ARGS = [
@@ -22,8 +22,7 @@ export interface SavedItem extends FeedItem {
 }
 
 export const download = async (items: FeedItem[]) => {
-    const progressBar = getProgressBar('Episodes');
-    progressBar.start(items.length, 0);
+    const progressBar = startBar('Episodes', items.length);
     const stopWatch = new Date();
 
     let downloaded = 0;
@@ -61,8 +60,7 @@ export const convert = async (
         ffmpegArgs = ffmpegArgString.split(' ');
     }
 
-    const progressBar = getProgressBar('Episodes');
-    progressBar.start(items.length, 0);
+    const progressBar = startBar('Episodes', items.length);
 
     let saved: SavedItem[] = [];
     const asyncWorker = async (item: FeedItem): Promise<SavedItem> => {
