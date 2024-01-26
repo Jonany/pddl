@@ -4,14 +4,14 @@ import { existsSync } from "node:fs";
 import Parser from "rss-parser";
 import { detox } from "./detox";
 import { startBar } from "./cli";
-import { DEFAULT_DOWNLOAD_ORDER, DEFAULT_EPISODE_LIMIT, DEFAULT_EPISODE_OFFSET, DEFAULT_OUTDIR, DownloadOrder } from "./options";
+import { DownloadOrder } from "./options";
 
 export interface FeedDownloadRequest {
     urls: string[];
     outdir: string;
-    episodeLimit?: number;
-    episodeOffset?: number;
-    downloadOrder?: DownloadOrder;
+    episodeLimit: number;
+    episodeOffset: number;
+    downloadOrder: DownloadOrder;
 };
 export interface FeedItem {
     title: string;
@@ -21,15 +21,11 @@ export interface FeedItem {
     inputFilePath: string;
 }
 
-export const getValueOrDefault = (defaultVal: number, value?: number): number =>
-    Math.max((value ?? defaultVal), defaultVal);
-
 export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedItem[]> => {
     const parser = new Parser();
     const feedCount = request.urls.length;
 
     const progressBar = startBar('Feeds', feedCount);
-    console.log('\n');
     const stopWatch = new Date();
 
     let itemsToDownload: FeedItem[] = [];
@@ -38,7 +34,7 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
 
         if (feed.title) {
             const feedName = detox(feed.title);
-            const feedFolder = `${request.outdir ?? DEFAULT_OUTDIR}/${feedName}`;
+            const feedFolder = `${request.outdir}/${feedName}`;
 
             if (!existsSync(feedFolder)) {
                 await mkdir(feedFolder, { recursive: true });
@@ -48,8 +44,6 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
             const response = await fetch(feedUrl);
             await Bun.write(feedFile, response);
 
-            const limit = getValueOrDefault(DEFAULT_EPISODE_LIMIT, request.episodeLimit);
-            const offset = getValueOrDefault(DEFAULT_EPISODE_OFFSET, request.episodeOffset);
             const defaultPubDate = new Date();
 
             const feedItems = feed.items
@@ -76,11 +70,11 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
 
                     return result;
                 })
-                .sort((a, b) => (request.downloadOrder ?? DEFAULT_DOWNLOAD_ORDER) == DownloadOrder.OldestFirst
+                .sort((a, b) => (request.downloadOrder) == DownloadOrder.OldestFirst
                     ? compareAsc(a.date, b.date)
                     : compareDesc(a.date, b.date)
                 )
-                .splice(offset, limit);
+                .splice(request.episodeOffset, request.episodeLimit);
 
             itemsToDownload = [...itemsToDownload, ...feedItems];
         }
