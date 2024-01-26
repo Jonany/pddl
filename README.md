@@ -5,7 +5,7 @@ A file-first podcast downloader and transcoder built with TypeScript and Bun/Nod
 
 ## Running
 
-Run with `bun run index.ts`.
+Run with `bun run index.ts`. Or generate a [single-file executable](https://bun.sh/docs/bundler/executables) with `bun build ./index.ts --compile --outfile bin/pddl`.
 
 
 ## Configuration
