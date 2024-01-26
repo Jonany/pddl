@@ -79,10 +79,16 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
     });
     progressBar.start(itemsToDownload.length, 0);
 
-    let downloaded = 0;
     const downloadResults = await Promise.allSettled(
       itemsToDownload.map(async (item): Promise<ItemDownloadResult> => {
-        const result = await downloadItem({ ...item, feedTitle: feed.title ?? '', path: feedFolder });
+        const result = await downloadItem({ 
+            ...item,
+            feedTitle: feed.title ?? '',
+            path: feedFolder,
+            fileExt: request.outFileExt,
+            ffmpegPath: request.ffmpegPath,
+            ffmpegArgs: request.ffmpegArgs,
+        });
         progressBar.increment();
         return result;
       })
@@ -124,8 +130,7 @@ self.onmessage = async (event: MessageEvent<FeedRequest>) => {
         return false;
       });
 
-    // TODO: Rewrite to reference archive file instead of items downloaded. Also had a step to
-    // validate the file exists to help prevent a bad feed.
+    // TODO: Add a step to validate the file exists to help prevent a bad feed.
     const archiveFileText = await Bun.file(archiveFileName).text();
     const feedItems = archiveFileText
       .split('\n')

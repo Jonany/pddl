@@ -4,6 +4,9 @@ export enum DownloadOrder {
 };
 export interface FeedRequest {
     url: string;
+    ffmpegPath: string;
+    outFileExt: string;
+    ffmpegArgs?: string;
     outdir?: string;
     episodeLimit?: number;
     episodeOffset?: number;
@@ -19,5 +22,5 @@ export const getValueOrDefault = (defaultVal: number, value?: number): number =>
 
 export const DEFAULT_EPISODE_LIMIT: number = 1;
 export const DEFAULT_EPISODE_OFFSET: number = 0;
-export const DEFAULT_OUTDIR: string = '/home/jonany/Public/podcasts';
+export const DEFAULT_OUTDIR: string = 'podcasts';
 export const DEFAULT_DOWNLOAD_ORDER: DownloadOrder = DownloadOrder.NewestFirst;

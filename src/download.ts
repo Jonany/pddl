@@ -4,6 +4,9 @@ import { detox } from "./detox";
 import { format } from "date-fns";
 
 const DEFAULT_FFMPEG_ARGS = [
+  '-loglevel', 'quiet',
+  '-hide_banner',
+  '-nostats',
   '-c:a', 'libopus',
   '-b:a', '24k',
   '-ar', '24000',
@@ -17,6 +20,7 @@ interface TranscodeRequest {
   inExt: string;
   outFile: string;
   ffmpegArgs: string[];
+  ffmpegPath: string;
 };
 
 export interface DownloadItem {
@@ -29,8 +33,10 @@ export interface DownloadItem {
 export interface ItemDownloadRequest extends DownloadItem {
   feedTitle: string;
   path: string;
+  ffmpegPath: string;
+  fileExt: string;
   overwrite?: boolean;
-  ffmpegArgs?: string[];
+  ffmpegArgs?: string;
 };
 
 export interface ItemDownloadResult {
@@ -51,7 +57,8 @@ export interface DownloadRequest {
   url: string;
   path: string;
   overwrite?: boolean;
-  ffmpegArgs?: string[];
+  ffmpegArgs?: string;
+  ffmpegPath: string;
 };
 
 export interface DownloadResult {
@@ -60,16 +67,56 @@ export interface DownloadResult {
 };
 
 export const downloadItem = async (request: ItemDownloadRequest): Promise<ItemDownloadResult> => {
-//   console.log(`'${request.feedTitle}' episode '${request.title}' downloading...`);
-
+  //   console.log(`'${request.feedTitle}' episode '${request.title}' downloading...`);
   const fileName = detox(`${format(request.date, 'yyyy-MM-dd')}_${request.title}`);
-  const itemFileName = `${fileName}.ogg`;
+  const itemFileName = `${fileName}.${request.fileExt.replaceAll('.', '')}`;
+  const path = `${request.path}/${itemFileName}`;
+  const url = request.url;
 
-  const downloadResult = await downloadAsOgg({ url: request.url, path: `${request.path}/${itemFileName}` });
+  let ffmpegArgs = DEFAULT_FFMPEG_ARGS;
+  let ffmpegArgString = request.ffmpegArgs;
+  if (ffmpegArgString != undefined && ffmpegArgString.length > 0) {
+    ffmpegArgs = ffmpegArgString.split(' ');
+  }
+
+  // TODO: Add option: 'overwrite'
+  if (await Bun.file(path).exists()) {
+    return {
+      success: true,
+      skipped: true,
+      guid: request.guid,
+      title: request.title,
+      fileName: itemFileName,
+      url: request.url,
+    };
+  }
+  const inputExt = url.substring(url.lastIndexOf('.') + 1);
+
+  if (inputExt == 'm4a') {
+    const input = switchExt(path, inputExt);
+    const response = await fetch(url);
+    await Bun.write(input, response);
+
+    await transcodeFromFile({
+      inSource: input,
+      inExt: inputExt,
+      outFile: path,
+      ffmpegArgs,
+      ffmpegPath: request.ffmpegPath,
+    });
+  } else {
+    await transcodeFromPipe({
+      inSource: request.url,
+      inExt: inputExt,
+      outFile: path,
+      ffmpegArgs,
+      ffmpegPath: request.ffmpegPath,
+    });
+  }
 
   return {
-    success: downloadResult.success,
-    skipped: downloadResult.skipped ?? false,
+    success: true,
+    skipped: false,
     guid: request.guid,
     title: request.title,
     fileName: itemFileName,
@@ -77,43 +124,14 @@ export const downloadItem = async (request: ItemDownloadRequest): Promise<ItemDo
   };
 }
 
-export const downloadAsOgg = async (request: DownloadRequest): Promise<DownloadResult> => {
-  let ffmpegArgs = request.ffmpegArgs;
-  if (ffmpegArgs == undefined || ffmpegArgs.length == 0) {
-    ffmpegArgs = DEFAULT_FFMPEG_ARGS;
-  }
-
-  // TODO: Add option: 'overwrite'
-  if (await Bun.file(request.path).exists()) {
-    return { success: true, skipped: true };
-  }
-  const inputExt = request.url.substring(request.url.lastIndexOf('.') + 1);
-
-  if (inputExt == 'm4a') {
-    const input = switchExt(request.path, inputExt);
-    const response = await fetch(request.url);
-    await Bun.write(input, response);
-
-    await transcodeFromFile({ inSource: input, inExt: inputExt, outFile: request.path, ffmpegArgs });
-  } else {
-    await transcodeFromPipe({ inSource: request.url, inExt: inputExt, outFile: request.path, ffmpegArgs });
-  }
-
-  return { success: true };
-}
-
 // TODO: Add detailed result object
 const transcodeFromFile = async (request: TranscodeRequest) => {
   const proc = Bun.spawn(
-    ['ffmpeg',
-      '-loglevel', 'quiet',
-      '-hide_banner',
-      '-nostats',
+    [request.ffmpegPath,
       '-f', request.inExt,
       '-i', request.inSource,
-      ...request.ffmpegArgs,
-      '-f', 'ogg',
-      request.outFile,
+    ...request.ffmpegArgs,
+    request.outFile,
     ],
   );
 
@@ -132,15 +150,11 @@ const transcodeFromPipe = async (request: TranscodeRequest) => {
   }
 
   const proc = Bun.spawn(
-    ['ffmpeg',
-      '-loglevel', 'quiet',
-      '-hide_banner',
-      '-nostats',
+    [request.ffmpegPath,
       '-f', request.inExt,
       '-i', 'pipe:0',
-      ...request.ffmpegArgs,
-      '-f', 'ogg',
-      request.outFile,
+    ...request.ffmpegArgs,
+    request.outFile,
     ],
     { stdin: 'pipe', },
   );

@@ -1,25 +1,18 @@
 # pddl
 
-## Downloaders
-
-- ~~https://github.com/Urethramancer/Seymour~~ Not multithreaded.
-- https://github.com/sholiday/tinycast. On-the-fly transcoding. Might be a good reference.
-- https://github.com/steenhansen/go-podcast-downloader. OK. Got a GUI and CLI.
-- https://github.com/omidmt/podcaster. OK. Uses `grab` package.
-- https://codeberg.org/meta/podtools. Multithreaded.
-- https://github.com/nathanamorin/local-podcasts. Go backend for React app.
-- https://github.com/amoilanen/gopodder. Worth checking out.
+A file-first podcast downloader and transcoder built with TypeScript and Bun/Node.js. It works by taking a list of your podcast feeds, downloading them, transcoding the episodes, and then updating the feed to reference the new episode filename/format.
 
 
-## Servers
+## Running
 
-- https://github.com/marvelm/podcast-publisher. OK. Might serve all files which would not be ideal.
-- https://github.com/sholiday/tinycast. On-the-fly transcoding. Might be a good reference.
-- https://github.com/nathanamorin/local-podcasts. Go backend for React app.
-- https://github.com/parkr/mypod. Seems to have yt-dlp integration.
+Run with `bun run index.ts`.
 
 
-## Misc.
+## Configuration
 
-- https://github.com/blicero/podshrink. Uses `ffmpeg` to strink files to opus.
-- https://github.com/raidancampbell/audio-adblock. Ad blocker/cleaner.
+pddl uses [Bun environment variables](https://bun.sh/docs/runtime/env) for configuration. See [example.env](./example.env) for valid options.
+
+
+## Serving
+
+Any file server (Cady, NGINX, etc.) will work but if you want to enjoy life I suggest using Tailscale's awesome `serve` command. For example, `tailscale serve --bg --set-path podcasts /home/user/Public/podcasts`. See the [Tailscale Serve](https://tailscale.com/kb/1312/serve) docs for details.
