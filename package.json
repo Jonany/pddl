@@ -3,7 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "1.0.3",
     "@types/jstoxml": "^2.0.4",
     "@types/ansi-colors": "^3.2.2",
     "@types/cli-progress": "^3.11.5"
