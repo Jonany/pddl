@@ -1,7 +1,8 @@
+import { cpus } from "node:os";
 import type { Opml } from "./src/opml";
-import { DEFAULT_EPISODE_LIMIT, DEFAULT_EPISODE_OFFSET, DEFAULT_DOWNLOAD_ORDER, getFeedItems, type FeedItem, DEFAULT_OUTDIR } from "./src/feed";
-import type { DownloadItem } from "./src/download";
 import { convert, download } from "./src/save";
+import { type FeedItem, getFeedItems } from "./src/feed";
+import { DEFAULT_EPISODE_LIMIT, DEFAULT_EPISODE_OFFSET, DEFAULT_DOWNLOAD_ORDER, DEFAULT_OUTDIR } from "./src/options";
 
 // TODO: Implement schedule loop
 
@@ -63,10 +64,13 @@ if (feedFound) {
     await download(itemsToDownload);
 
     // Convert
-    await convert(
+    const cpuCount = cpus().length;
+    const threadLimit = Math.max(cpuCount - 1, 1);
+    const savedItems = await convert(
       itemsToDownload,
       options.outFileExt,
       options.ffmpegPath,
+      threadLimit,
       options.ffmpegArgs,
     );
 

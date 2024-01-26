@@ -4,11 +4,8 @@ import { existsSync } from "node:fs";
 import Parser from "rss-parser";
 import { detox } from "./detox";
 import { getProgressBar } from "./cli";
+import { DEFAULT_DOWNLOAD_ORDER, DEFAULT_EPISODE_LIMIT, DEFAULT_EPISODE_OFFSET, DEFAULT_OUTDIR, DownloadOrder } from "./options";
 
-export enum DownloadOrder {
-    OldestFirst = 'asc',
-    NewestFirst = 'desc',
-};
 export interface FeedDownloadRequest {
     urls: string[];
     outdir: string;
@@ -21,16 +18,11 @@ export interface FeedItem {
     url: string;
     date: Date;
     guid: string;
-    fileNamePath: string;
+    inputFilePath: string;
 }
 
 export const getValueOrDefault = (defaultVal: number, value?: number): number =>
     Math.max((value ?? defaultVal), defaultVal);
-
-export const DEFAULT_EPISODE_LIMIT: number = 1;
-export const DEFAULT_EPISODE_OFFSET: number = 0;
-export const DEFAULT_OUTDIR: string = 'podcasts';
-export const DEFAULT_DOWNLOAD_ORDER: DownloadOrder = DownloadOrder.NewestFirst;
 
 export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedItem[]> => {
     const parser = new Parser();
@@ -63,7 +55,7 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
 
             const feedItems = feed.items
                 // Remove invalid items
-                .filter(item => 
+                .filter(item =>
                     (item.title ?? '').length > 1 &&
                     (item.enclosure?.url || item.link || '').length > 1 &&
                     (item.guid ?? '').length > 1
@@ -72,17 +64,18 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
                 .map(item => {
                     const url = (item.enclosure?.url || item.link)!;
                     const date = typeof item.isoDate === 'undefined' ? defaultPubDate : parseISO(item.isoDate);
-                    const ext = url.substring(url.lastIndexOf('.'));
+                    const ext = url.substring(url.lastIndexOf('.') + 1);
                     const fileName = detox(`${format(date, 'yyyy-MM-dd')}_${item.title}`);
                     const path = `${feedFolder}/${fileName}.${ext}`;
-
-                    return {
+                    const result: FeedItem = {
                         title: item.title!,
                         url: url,
                         date: date,
                         guid: item.guid!,
-                        fileNamePath: path,
+                        inputFilePath: path,
                     };
+
+                    return result;
                 })
                 .sort((a, b) => (request.downloadOrder ?? DEFAULT_DOWNLOAD_ORDER) == DownloadOrder.OldestFirst
                     ? compareAsc(a.date, b.date)
@@ -98,6 +91,6 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
 
     progressBar.stop();
     console.log(`Downloaded ${feedCount} feeds in ${differenceInSeconds(new Date(), stopWatch)}s.\n`);
-    
+
     return itemsToDownload;
 }
