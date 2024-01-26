@@ -1,17 +1,17 @@
-import { differenceInSeconds } from "date-fns";
 import type { Opml } from "./src/opml";
-import { type FeedResult, type FeedRequest, DEFAULT_EPISODE_LIMIT, DEFAULT_EPISODE_OFFSET, DEFAULT_DOWNLOAD_ORDER } from "./src/feed";
+import { DEFAULT_EPISODE_LIMIT, DEFAULT_EPISODE_OFFSET, DEFAULT_DOWNLOAD_ORDER, getFeedItems, type FeedItem, DEFAULT_OUTDIR } from "./src/feed";
+import type { DownloadItem } from "./src/download";
+import { convert, download } from "./src/save";
 
 // TODO: Implement schedule loop
 
-const defaultFeedOptions: FeedRequest = {
-  url: '',
-  episodeLimit: DEFAULT_EPISODE_LIMIT,
-  episodeOffset: DEFAULT_EPISODE_OFFSET,
+const options = {
+  feedEpisodeLimit: DEFAULT_EPISODE_LIMIT,
+  feedEpisodeOffset: DEFAULT_EPISODE_OFFSET,
   downloadOrder: DEFAULT_DOWNLOAD_ORDER,
   serveUrl: Bun.env.PDDL_SERVE_URL,
   serveType: Bun.env.PDDL_SERVE_TYPE,
-  outdir: Bun.env.PDDL_OUTDIR,
+  outdir: Bun.env.PDDL_OUTDIR ?? DEFAULT_OUTDIR,
   ffmpegPath: Bun.env.PDDL_FFMPEG_BIN ?? 'ffmpeg',
   ffmpegArgs: Bun.env.PDDL_FFMPEG_ARGS,
   outFileExt: 'ogg'
@@ -28,17 +28,17 @@ const opmlBinPath = Bun.env.PDDL_OPML_BIN ?? 'opml';
 
 const episodeLimit = Number.parseInt(Bun.env.PDDL_EPISODE_LIMIT ?? '');
 if (Number.isFinite(episodeLimit) && episodeLimit > 0) {
-  defaultFeedOptions.episodeLimit = episodeLimit;
+  options.feedEpisodeLimit = episodeLimit;
 }
 
 const episodeOffset = Number.parseInt(Bun.env.PDDL_EPISODE_OFFSET ?? '');
 if (Number.isFinite(episodeOffset) && episodeOffset > 0) {
-  defaultFeedOptions.episodeOffset = episodeOffset;
+  options.feedEpisodeOffset = episodeOffset;
 }
 
 const outFileExt = Bun.env.PDDL_OUTFILE_EXT;
 if (outFileExt !== undefined && outFileExt.length > 1) {
-  defaultFeedOptions.outFileExt = outFileExt;
+  options.outFileExt = outFileExt;
 }
 
 if (feedFound) {
@@ -49,28 +49,28 @@ if (feedFound) {
   if (feedsJson.length > 0) {
     const feeds: Opml = JSON.parse(feedsJson);
 
-    const workerURL = new URL("src/feedWorker.ts", import.meta.url).href;
-    const now = new Date();
+    // FETCH
+    const feedUrls = feeds.body.outlines.map(o => o.xml_url);
+    const itemsToDownload: FeedItem[] = await getFeedItems({
+      urls: feedUrls,
+      outdir: options.outdir,
+      downloadOrder: options.downloadOrder,
+      episodeLimit: options.feedEpisodeLimit,
+      episodeOffset: options.feedEpisodeOffset,
+    });
 
-    const feedTotal = feeds.body.outlines.length;
-    let finishedFeedCount = 0;
+    // SAVE
+    await download(itemsToDownload);
 
-    // TODO: Rework to a single download/transcode queue instead of splitting by podcast.
-    // That will allow me to throttle more easily.
-    for (const feed of feeds.body.outlines) {
-      const worker = new Worker(workerURL);
-      const request: FeedRequest = { 
-        ...defaultFeedOptions,
-        url: feed.xml_url,
-      };
-      worker.postMessage(request);
-      worker.onmessage = (event: MessageEvent<FeedResult>) => {
-        console.log(`'${event.data.title}' finished in ${differenceInSeconds(new Date(), now)}s`);
-        finishedFeedCount++;
-        console.log(`${finishedFeedCount}/${feedTotal} workers finished`);
-        worker.terminate();
-      };
-    }
+    // Convert
+    await convert(
+      itemsToDownload,
+      options.outFileExt,
+      options.ffmpegPath,
+      options.ffmpegArgs,
+    );
+
+    // SERVE
   } else {
     console.warn('Feed file empty');
   }
