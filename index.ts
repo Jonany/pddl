@@ -3,6 +3,7 @@ import type { Opml } from "./src/opml";
 import { convert, download } from "./src/save";
 import { type FeedItem, getFeedItems } from "./src/feed";
 import { getOptions } from "./src/options";
+import { archive } from "./src/archive";
 
 // TODO: Implement schedule loop
 // TODO: Implement adjustable logging
@@ -43,8 +44,10 @@ if (feedFound) {
       threadLimit,
       options.ffmpegArgs,
     );
+    await archive(savedItems, threadLimit);
 
     // SERVE
+    // TODO: Transform feed files.
   } else {
     console.warn('Feed file empty');
   }

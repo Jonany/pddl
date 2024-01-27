@@ -1,8 +1,7 @@
 import { unlink } from "node:fs/promises";
 import fastq from "fastq";
 import type { queueAsPromised } from "fastq";
-import { differenceInMinutes } from "date-fns";
-import { startBar } from "./cli";
+import { displayDuration, startBar } from "./cli";
 import type { FeedItem } from "./feed";
 
 const DEFAULT_FFMPEG_ARGS = [
@@ -44,7 +43,9 @@ export const download = async (items: FeedItem[]) => {
         })
     );
     progressBar.stop();
-    console.log(`Downloaded ${downloaded} episodes in ${differenceInMinutes(new Date(), stopWatch)} min. Skipped ${skipped} items.\n`)
+    console.log(
+        `Downloaded ${downloaded} episodes in ${displayDuration(stopWatch)}. Skipped ${skipped} items.\n`
+    );
 }
 
 export const convert = async (
@@ -60,9 +61,12 @@ export const convert = async (
         ffmpegArgs = ffmpegArgString.split(' ');
     }
 
+    const stopWatch = new Date();
     const progressBar = startBar('Episodes', items.length);
 
     let saved: SavedItem[] = [];
+    let converted = 0;
+
     const asyncWorker = async (item: FeedItem): Promise<SavedItem> => {
         const input = Bun.file(item.inputFilePath);
         if (await input.exists()) {
@@ -78,8 +82,9 @@ export const convert = async (
                 ]);
 
                 await proc.exited;
+                converted++;
                 // TODO: Parameterize
-                // await unlink(item.fileNamePath); //deletes the input file
+                // await unlink(item.inputFilePath); //deletes the input file
             }
 
             progressBar.increment();
@@ -104,7 +109,7 @@ export const convert = async (
         return r;
     }));
     progressBar.stop();
-    console.log(`Conversion complete.\n`);
+    console.log(`Converted ${converted} episodes in ${displayDuration(stopWatch)}. Skipped ${saved.length - converted} items.\n`);
     
 
     return saved;

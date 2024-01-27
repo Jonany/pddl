@@ -1,9 +1,9 @@
-import { parseISO, compareAsc, compareDesc, format, differenceInSeconds } from "date-fns";
+import { parseISO, compareAsc, compareDesc, format } from "date-fns";
 import { mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import Parser from "rss-parser";
 import { detox } from "./detox";
-import { startBar } from "./cli";
+import { displayDuration, startBar } from "./cli";
 import { DownloadOrder } from "./options";
 
 export interface FeedDownloadRequest {
@@ -54,6 +54,8 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
                     (item.guid ?? '').length > 1
                 )
                 // Build needed data
+                // TODO: Include metadata so that it can be written to the audio file
+                // and or a separate metadata file.
                 .map(item => {
                     const url = (item.enclosure?.url || item.link)!;
                     const date = typeof item.isoDate === 'undefined' ? defaultPubDate : parseISO(item.isoDate);
@@ -83,7 +85,7 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
     }
 
     progressBar.stop();
-    console.log(`Downloaded ${feedCount} feeds in ${differenceInSeconds(new Date(), stopWatch)}s.\n`);
+    console.log(`Downloaded ${feedCount} feeds in ${displayDuration(stopWatch)}.\n`);
 
     return itemsToDownload;
 }
