@@ -4,6 +4,7 @@ export enum DownloadOrder {
 };
 
 export interface Options {
+    archiveFile: string;
     downloadOrder: DownloadOrder;
     feedEpisodeLimit: number;
     feedEpisodeOffset: number;
@@ -17,6 +18,7 @@ export interface Options {
     serveUrl: string;
 }
 
+const DEFAULT_ARCHIVE_FILE: string = 'archive.txt';
 const DEFAULT_DOWNLOAD_ORDER: DownloadOrder = DownloadOrder.NewestFirst;
 const DEFAULT_EPISODE_LIMIT: number = 2;
 const DEFAULT_EPISODE_OFFSET: number = 0;
@@ -30,6 +32,8 @@ const DEFAULT_SERVE_TYPE: string = 'audio/ogg';
 const DEFAULT_SERVE_URL: string = 'https://host.nope.ts.net/podcasts';
 
 export const getOptions = (): Options => {
+    const archiveFile = Bun.env.PDDL_ARCHIVE_FILE ?? DEFAULT_ARCHIVE_FILE;    
+
     let downloadOrder: DownloadOrder = DEFAULT_DOWNLOAD_ORDER;
     const envDownloadOrder = Bun.env.PDDL_DOWNLOAD_ORDER ?? '';
     switch (envDownloadOrder.toLowerCase()) {
@@ -69,6 +73,7 @@ export const getOptions = (): Options => {
     const serveType = Bun.env.PDDL_SERVE_TYPE ?? DEFAULT_SERVE_TYPE;
 
     return {
+        archiveFile: archiveFile,
         downloadOrder: downloadOrder,
         feedEpisodeLimit: feedEpisodeLimit,
         feedEpisodeOffset: feedEpisodeOffset,
