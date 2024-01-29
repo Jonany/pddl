@@ -17,7 +17,6 @@
     "date-fns": "^3.0.6",
     "fastq": "^1.17.0",
     "feed-media": "^5.0.1",
-    "jstoxml": "^3.2.10",
     "rss-parser": "^3.13.0"
   }
 }

@@ -1,7 +1,7 @@
 import { cpus } from "node:os";
 import type { Opml } from "./src/opml";
 import { convert, download } from "./src/save";
-import { type FeedItem, getFeedItems } from "./src/feed";
+import { type FeedItem, getFeedItems, updateFeeds } from "./src/feed";
 import { getOptions } from "./src/options";
 import { archive, getArchived } from "./src/archive";
 
@@ -32,14 +32,16 @@ if (feedFound) {
         });
 
         // SAVE
-        const archivedItems = await getArchived(options.archiveFile);
+        let archivedItems = await getArchived(options.archiveFile);
         const archivedItemGuids = archivedItems.map(a => a.guid);
         const toDownload = feedItems.filter(d => !archivedItemGuids.includes(d.guid));
         await download(toDownload);
 
         // Convert
+        // TODO: Parameterize
         const cpuCount = cpus().length;
         const threadLimit = Math.max(cpuCount - 1, 1);
+
         const savedItems = await convert(
             toDownload,
             options.outFileExt,
@@ -50,7 +52,8 @@ if (feedFound) {
         await archive(savedItems, options.archiveFile);
 
         // SERVE
-        // TODO: Transform feed files.
+        archivedItems = await getArchived(options.archiveFile);
+        await updateFeeds(archivedItems, options.serveUrl, options.serveType, threadLimit);
     } else {
         console.warn('Feed file empty');
     }

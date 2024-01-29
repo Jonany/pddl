@@ -73,7 +73,8 @@ export const convert = async (
             const outputFilePath = switchExt(item.inputFilePath, outputFileExt);
 
             const output = Bun.file(outputFilePath);
-            if (!output.exists()) {
+            const outputExists = await output.exists();
+            if (!outputExists) {
                 const proc = Bun.spawn([
                     ffmpegPath,
                     '-i', item.inputFilePath,

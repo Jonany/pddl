@@ -83,7 +83,7 @@ export const getOptions = (): Options => {
         opmlPath: opmlBinPath,
         outdir: outdir,
         outFileExt: outFileExt,
-        serveType: serveUrl,
-        serveUrl: serveType,
+        serveType: serveType,
+        serveUrl: serveUrl,
     };
 }
