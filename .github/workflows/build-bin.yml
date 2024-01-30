@@ -15,4 +15,6 @@ jobs:
     - uses: oven-sh/setup-bun@v1
 
     - name: Build
-      run: bun build ./index.ts --compile --outfile bin/pddl
+      run: 
+        bun install
+        bun build ./index.ts --compile --outfile bin/pddl
