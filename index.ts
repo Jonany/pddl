@@ -47,6 +47,7 @@ if (feedFound) {
             options.outFileExt,
             options.ffmpegPath,
             threadLimit,
+            options.deleteDownloaded,
             options.ffmpegArgs,
         );
         await archive(savedItems, options.archiveFile);

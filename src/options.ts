@@ -11,6 +11,7 @@ export interface Options {
     feedFile: string;
     ffmpegArgs: string;
     ffmpegPath: string;
+    deleteDownloaded: boolean;
     opmlPath: string;
     outdir: string;
     outFileExt: string;
@@ -58,9 +59,10 @@ export const getOptions = (): Options => {
     }
 
     const feedFile = Bun.env.PDDL_FEED_FILE ?? DEFAULT_FEED_FILE;    
-    const opmlBinPath = Bun.env.PDDL_OPML_BIN ?? DEFAULT_OPML_BIN;
     const ffmpegArgs = Bun.env.PDDL_FFMPEG_ARGS ?? DEFAULT_FFMPEG_ARGS;
     const ffmpegPath = Bun.env.PDDL_FFMPEG_BIN ?? DEFAULT_FFMPEG_BIN;
+    const deleteDownloaded = Bun.env.PDDL_DELETE_DOWNLOADED !== 'false';
+    const opmlBinPath = Bun.env.PDDL_OPML_BIN ?? DEFAULT_OPML_BIN;
     const outdir = Bun.env.PDDL_OUTDIR ?? DEFAULT_OUTDIR;
 
     let outFileExt = DEFAULT_OUTFILE_EXT;
@@ -80,6 +82,7 @@ export const getOptions = (): Options => {
         feedFile: feedFile,
         ffmpegArgs: ffmpegArgs,
         ffmpegPath: ffmpegPath,
+        deleteDownloaded: deleteDownloaded,
         opmlPath: opmlBinPath,
         outdir: outdir,
         outFileExt: outFileExt,

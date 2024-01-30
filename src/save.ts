@@ -35,7 +35,6 @@ export const download = async (items: FeedItem[]) => {
                 return;
             }
 
-            // console.log(`Downloading ${item.fileNamePath}`);
             const response = await fetch(item.url);
             await Bun.write(item.inputFilePath, response);
             downloaded++;
@@ -53,6 +52,7 @@ export const convert = async (
     outputFileExt: string,
     ffmpegPath: string,
     workerLimit: number,
+    deleteDownloaded: boolean,
     ffmpegArgsString?: string
 ): Promise<SavedItem[]> => {
     let ffmpegArgs = DEFAULT_FFMPEG_ARGS;
@@ -84,8 +84,10 @@ export const convert = async (
 
                 await proc.exited;
                 converted++;
-                // TODO: Parameterize
-                // await unlink(item.inputFilePath); //deletes the input file
+                
+                if (deleteDownloaded) {
+                    await unlink(item.inputFilePath);
+                }
             }
 
             progressBar.increment();
