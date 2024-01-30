@@ -36,10 +36,17 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
 
     let itemsToDownload: FeedItem[] = [];
     for (const feedUrl of request.urls) {
-        // TODO: Handle error better
-        const feed = await parser.parseURL(feedUrl, () => console.error(`Unable to get the feed at ${feedUrl}`));
+        // TODO: Improve retry handling and error reporting.
+        let feed;
+        try {
+            const response = await fetch(feedUrl);
+            if (response.ok) {
+                const xml = await response.text();
+                feed = await parser.parseString(xml);
+            }
+        } catch (error) { }
 
-        if (feed.title) {
+        if (feed?.title) {
             const feedName = detox(feed.title);
             const feedFolder = `${request.outdir}/${feedName}`;
 
@@ -86,9 +93,10 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
                 .splice(request.episodeOffset, request.episodeLimit);
 
             itemsToDownload = [...itemsToDownload, ...feedItems];
+            
+            progressBar.increment();
         }
 
-        progressBar.increment();
     }
 
     progressBar.stop();

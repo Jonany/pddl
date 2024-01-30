@@ -35,10 +35,12 @@ export const download = async (items: FeedItem[]) => {
                 return;
             }
 
-            const response = await fetch(item.url);
-            await Bun.write(item.inputFilePath, response);
-            downloaded++;
-            progressBar.increment();
+            try {
+                const response = await fetch(item.url);
+                await Bun.write(item.inputFilePath, response);
+                downloaded++;
+                progressBar.increment();
+            } catch (error) { }
         })
     );
     progressBar.stop();
