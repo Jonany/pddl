@@ -31,3 +31,8 @@ pddl uses [Bun environment variables](https://bun.sh/docs/runtime/env) for confi
 ## Serving
 
 Any file server (Cady, NGINX, etc.) will work but if you want to enjoy life I suggest using Tailscale's awesome `serve` command. For example, `tailscale serve --bg --set-path podcasts /home/user/Public/podcasts`. See the [Tailscale Serve](https://tailscale.com/kb/1312/serve) docs for details.
+
+
+## Aren't there enough of these?
+
+I've tried quite a few other options but none of them seem to measure up to what I wanted. Most of them could do the downloading part and some could even handle naming but the only two I recall finding one that regenerated the feeds so that I could serve the content were Podfetch and Podgrab. Both of which used SQLite to store data and were just kind of a pain. So I built my own thing.
