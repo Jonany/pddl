@@ -1,4 +1,7 @@
 import { unlink } from "node:fs/promises";
+import { createWriteStream } from "node:fs";
+import { Readable } from "node:stream";
+import { finished } from "node:stream/promises";
 import fastq from "fastq";
 import type { queueAsPromised } from "fastq";
 import { displayDuration, startBar } from "./cli";
@@ -20,30 +23,50 @@ export interface SavedItem extends FeedItem {
     outputFilePath: string;
 }
 
-export const download = async (items: FeedItem[]) => {
-    const progressBar = startBar('Episodes', items.length);
+export const download = async (items: FeedItem[], workerLimit: number) => {
+    // const progressBar = startBar('Episodes', items.length);
     const stopWatch = new Date();
 
     let downloaded = 0;
     let skipped = 0;
 
-    await Promise.allSettled(
-        items.map(async (item) => {
-            if (await Bun.file(item.inputFilePath).exists()) {
-                skipped++;
-                progressBar.increment();
-                return;
-            }
+    // TODO: Improve utilization of download speeds.
+    // There is an initial lag for at least 30 seconds.
+    // Then it picks up to about 10 MiB/s and falls and rises to that level.
+    // The disk usage is bursty and the memory usage is ~300 MB 
+    // which makes me think it isn't flushing very often.
+    // Setting the highWaterMark didn't seem to help that.
+    // I'm considering pulling in a util like aria2c for this.
+    // aria2c not only seems faster but it also manages partial downloads.
+    const q: queueAsPromised<FeedItem> = fastq.promise(async (item) => {
+        console.log(`Downloading ${item.inputFilePath}`);
+        const file = Bun.file(item.inputFilePath);
+        if (await file.exists()) {
+            skipped++;
+            // progressBar.increment();
+            return;
+        }
 
-            try {
-                const response = await fetch(item.url);
-                await Bun.write(item.inputFilePath, response);
-                downloaded++;
-                progressBar.increment();
-            } catch (error) { }
-        })
-    );
-    progressBar.stop();
+        try {
+            const stream = createWriteStream(item.inputFilePath);
+            const { body } = await fetch(item.url);
+
+            if (body !== null) {
+                await finished(Readable.fromWeb(body, { highWaterMark: 1024 * 1024 }).pipe(stream));
+            }
+            downloaded++;
+            // progressBar.increment();
+        } catch (error) { }
+    }, workerLimit * 2);
+
+    // Running a Durstenfeld shuffle on these items in an 
+    // attempt to reduce the possibility of rate limiting
+    // by podcast hosts.
+    const sortedItems = durstenfeldShuffle(items);
+    console.log(`Shuffled ${sortedItems[0].title}, ${sortedItems[1].title}, ${sortedItems[3].title}`)
+    await Promise.allSettled(sortedItems.map(async (i) => await q.push(i)));
+
+    // progressBar.stop();
     console.log(
         `Downloaded ${downloaded} episodes in ${displayDuration(stopWatch)}. Skipped ${skipped} items.\n`
     );
@@ -86,7 +109,7 @@ export const convert = async (
 
                 await proc.exited;
                 converted++;
-                
+
                 if (deleteDownloaded) {
                     await unlink(item.inputFilePath);
                 }
@@ -115,10 +138,21 @@ export const convert = async (
     }));
     progressBar.stop();
     console.log(`Converted ${converted} episodes in ${displayDuration(stopWatch)}. Skipped ${saved.length - converted} items.\n`);
-    
+
 
     return saved;
 }
 
-const switchExt = (fileName: string, newExt: string): string => 
+const switchExt = (fileName: string, newExt: string): string =>
     `${fileName.substring(0, fileName.lastIndexOf('.'))}.${newExt.replaceAll('.', '')}`;
+
+// Cred goes to a comment under https://stackoverflow.com/a/12646864
+const durstenfeldShuffle = <T>(array: T[]): T[] => { 
+    const arrayCopy = [...array];
+    
+    for (let i = arrayCopy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arrayCopy[i], arrayCopy[j]] = [arrayCopy[j], arrayCopy[i]];
+    }
+    return arrayCopy;
+}

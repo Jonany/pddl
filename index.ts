@@ -1,4 +1,3 @@
-import { cpus } from "node:os";
 import type { Opml } from "./src/opml";
 import { convert, download } from "./src/save";
 import { type FeedItem, getFeedItems, updateFeeds } from "./src/feed";
@@ -11,11 +10,11 @@ console.log('\n\nLoading OPML file');
 
 const options = getOptions();
 // TODO: Implement OPML import in TypeScript/Bun
-const feedFound = await Bun.file(options.feedFile).exists();
+const opmlFound = await Bun.file(options.opmlFile).exists();
 
-if (feedFound) {
-    console.log(`Using feed file ${options.feedFile}\n`);
-    const proc = Bun.spawnSync([options.opmlPath, "--file", options.feedFile, "--json"]);
+if (opmlFound) {
+    console.log(`Using feed file ${options.opmlFile}\n`);
+    const proc = Bun.spawnSync([options.opmlPath, "--file", options.opmlFile, "--json"]);
     const feedsJson = proc.stdout.toString();
 
     if (feedsJson.length > 0) {
@@ -35,18 +34,14 @@ if (feedFound) {
         let archivedItems = await getArchived(options.archiveFile);
         const archivedItemGuids = archivedItems.map(a => a.guid);
         const toDownload = feedItems.filter(d => !archivedItemGuids.includes(d.guid));
-        await download(toDownload);
+        await download(toDownload, options.workerLimit);
 
         // Convert
-        // TODO: Parameterize
-        const cpuCount = cpus().length;
-        const threadLimit = Math.max(cpuCount - 1, 1);
-
         const savedItems = await convert(
             toDownload,
             options.outFileExt,
             options.ffmpegPath,
-            threadLimit,
+            options.workerLimit,
             options.deleteDownloaded,
             options.ffmpegArgs,
         );
@@ -54,10 +49,10 @@ if (feedFound) {
 
         // SERVE
         archivedItems = await getArchived(options.archiveFile);
-        await updateFeeds(archivedItems, options.serveUrl, options.serveType, threadLimit);
+        await updateFeeds(archivedItems, options.serveUrl, options.serveType, options.workerLimit);
     } else {
         console.warn('Feed file empty');
     }
 } else {
-    console.warn(`Feed file ${options.feedFile} does not exist`);
+    console.warn(`Feed file ${options.opmlFile} does not exist`);
 }

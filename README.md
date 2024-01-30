@@ -8,8 +8,8 @@ A file-first podcast downloader and transcoder built with TypeScript and Bun/Nod
 - [x] Import an OPML feed of podcasts.
 - [x] Download podcast feed and episodes.
 - [x] Transcode episodes with FFMPEG.
-- [/] Record (archive) list of downloaded episodes.
-- [ ] Update podcast feed file to point to local files.
+- [x] Record (archive) list of downloaded episodes.
+- [x] Update podcast feed file to point to local files.
 - [x] Runs on Linux.
 - [ ] Runs on Windows.
 - [ ] Runs on OSX.

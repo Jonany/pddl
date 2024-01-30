@@ -8,29 +8,31 @@ export interface Options {
     downloadOrder: DownloadOrder;
     feedEpisodeLimit: number;
     feedEpisodeOffset: number;
-    feedFile: string;
     ffmpegArgs: string;
     ffmpegPath: string;
     deleteDownloaded: boolean;
+    opmlFile: string;
     opmlPath: string;
     outdir: string;
     outFileExt: string;
     serveType: string;
     serveUrl: string;
+    workerLimit: number;
 }
 
 const DEFAULT_ARCHIVE_FILE: string = 'archive.txt';
 const DEFAULT_DOWNLOAD_ORDER: DownloadOrder = DownloadOrder.NewestFirst;
 const DEFAULT_EPISODE_LIMIT: number = 2;
 const DEFAULT_EPISODE_OFFSET: number = 0;
-const DEFAULT_FEED_FILE: string = 'feeds.opml';
 const DEFAULT_FFMPEG_ARGS: string = '-loglevel quiet -hide_banner -nostats -c:a libopus -b:a 24k -ar 24000 -ac 1 -fps_mode vfr -f ogg';
 const DEFAULT_FFMPEG_BIN: string = 'lib/ffmpeg';
 const DEFAULT_OPML_BIN: string = 'lib/opml';
+const DEFAULT_OPML_FILE: string = 'feeds.opml';
 const DEFAULT_OUTDIR: string = 'podcasts';
 const DEFAULT_OUTFILE_EXT: string = 'ogg';
 const DEFAULT_SERVE_TYPE: string = 'audio/ogg';
 const DEFAULT_SERVE_URL: string = 'https://host.nope.ts.net/podcasts';
+const DEFAULT_WORKER_LIMIT: number = 1;
 
 export const getOptions = (): Options => {
     const archiveFile = Bun.env.PDDL_ARCHIVE_FILE ?? DEFAULT_ARCHIVE_FILE;    
@@ -58,7 +60,7 @@ export const getOptions = (): Options => {
         feedEpisodeOffset = envEpisodeOffset;
     }
 
-    const feedFile = Bun.env.PDDL_FEED_FILE ?? DEFAULT_FEED_FILE;    
+    const opmlFile = Bun.env.PDDL_OPML_FILE ?? DEFAULT_OPML_FILE;    
     const ffmpegArgs = Bun.env.PDDL_FFMPEG_ARGS ?? DEFAULT_FFMPEG_ARGS;
     const ffmpegPath = Bun.env.PDDL_FFMPEG_BIN ?? DEFAULT_FFMPEG_BIN;
     const deleteDownloaded = Bun.env.PDDL_DELETE_DOWNLOADED !== 'false';
@@ -73,13 +75,19 @@ export const getOptions = (): Options => {
     
     const serveUrl = Bun.env.PDDL_SERVE_URL ?? DEFAULT_SERVE_URL;
     const serveType = Bun.env.PDDL_SERVE_TYPE ?? DEFAULT_SERVE_TYPE;
+    
+    let workerLimit = DEFAULT_WORKER_LIMIT;
+    const envWorkerLimit = Number.parseInt(Bun.env.PDDL_WORKER_LIMIT ?? '');
+    if (Number.isFinite(envWorkerLimit) && envWorkerLimit > 0) {
+        workerLimit = envWorkerLimit;
+    }
 
     return {
         archiveFile: archiveFile,
         downloadOrder: downloadOrder,
         feedEpisodeLimit: feedEpisodeLimit,
         feedEpisodeOffset: feedEpisodeOffset,
-        feedFile: feedFile,
+        opmlFile: opmlFile,
         ffmpegArgs: ffmpegArgs,
         ffmpegPath: ffmpegPath,
         deleteDownloaded: deleteDownloaded,
@@ -88,5 +96,6 @@ export const getOptions = (): Options => {
         outFileExt: outFileExt,
         serveType: serveType,
         serveUrl: serveUrl,
+        workerLimit: workerLimit,
     };
 }
