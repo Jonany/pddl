@@ -83,7 +83,7 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
 
                     return result;
                 })
-                .sort((a, b) => (request.downloadOrder) == DownloadOrder.OldestFirst
+                .sort((a, b) => request.downloadOrder == DownloadOrder.OldestFirst
                     ? compareAsc(a.date, b.date)
                     : compareDesc(a.date, b.date)
                 )
@@ -143,40 +143,31 @@ const updateFeed = async (task: UpdateFeedTask) => {
     const feedFolder = dirname(task.file.name!);
     const feedName = basename(feedFolder);
 
-    const original = await task.file.text();
-    const lines = original.split(EOL);
-    
-    const findType = /type="audio\/.*"/gi;
-    const findLength = /length="\d+"/gi;
+    const feedText = await task.file.text();
+    const feedLines = feedText.split(EOL);
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        let foundUrl: string | undefined = undefined;
-        let newUrl: string | undefined = undefined;
-        let newLength: number | undefined = undefined;
+    // Doing items as the outer loop should result in the fewest iterations because
+    // the number of items will always be less than the number of lines in the feed file.
+    for (let x = 0; x < task.items.length; x++) {
+        const item = task.items[x];
 
-        for (let x = 0; x < task.items.length; x++) {
-            const item = task.items[x];
-            if (line.includes(item.url)) {
-                foundUrl = item.url;
+        for (let i = 0; i < feedLines.length; i++) {
+            if (feedLines[i].includes(item.url)) {
                 const fileSubpath = item.filePath.replace(`${feedFolder}${sep}`, '');
-                newUrl = `${task.serveUrl}${sep}${feedName}${sep}${fileSubpath}`;
-                newLength = Bun.file(item.filePath).size;
+                const newLength = Bun.file(item.filePath).size;
+                const newUrl = `${task.serveUrl}${sep}${feedName}${sep}${fileSubpath}`;
+
+                feedLines[i] = feedLines[i]
+                    .replace(item.url, newUrl)
+                    .replace(/length="\d+"/gi, `length="${newLength}"`)
+                    .replace(/type="audio\/.*"/gi, `type="${task.serveType}"`);
+
+                break;
             }
         }
-
-        if (foundUrl && newUrl && newLength) {
-            lines[i] = line
-                .replace(foundUrl, newUrl)
-                .replace(findLength, `length="${newLength}"`)
-                .replace(findType, `type="${task.serveType}"`);
-        }
-        foundUrl = undefined;
-        newUrl = undefined;
-        newLength = undefined;
     }
 
-    let newFeedText = lines.join(EOL);
+    let newFeedText = feedLines.join(EOL);
 
     Bun.write(task.file, newFeedText);
 }
