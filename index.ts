@@ -4,12 +4,9 @@ import { type FeedItem, getFeedItems, updateFeeds } from "./src/feed";
 import { getOptions } from "./src/options";
 import { archive, getArchived } from "./src/archive";
 
-// TODO: Implement schedule loop
-// TODO: Implement adjustable logging
 console.log('\n\nLoading OPML file');
 
 const options = getOptions();
-// TODO: Implement OPML import in TypeScript/Bun
 const opmlFound = await Bun.file(options.opmlFile).exists();
 
 if (opmlFound) {

@@ -36,7 +36,6 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
 
     let itemsToDownload: FeedItem[] = [];
     for (const feedUrl of request.urls) {
-        // TODO: Improve retry handling and error reporting.
         let feed;
         try {
             const response = await fetch(feedUrl);
@@ -68,8 +67,6 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
                     (item.guid ?? '').length > 1
                 )
                 // Build needed data
-                // TODO: Include metadata so that it can be written to the audio file
-                // and or a separate metadata file.
                 .map(item => {
                     const url = (item.enclosure?.url || item.link)!;
                     const date = typeof item.isoDate === 'undefined' ? defaultPubDate : parseISO(item.isoDate);

@@ -30,14 +30,6 @@ export const download = async (items: FeedItem[], workerLimit: number) => {
     let downloaded = 0;
     let skipped = 0;
 
-    // TODO: Improve utilization of download speeds.
-    // There is an initial lag for at least 30 seconds.
-    // Then it picks up to about 10 MiB/s and falls and rises to that level.
-    // The disk usage is bursty and the memory usage is ~300 MB 
-    // which makes me think it isn't flushing very often.
-    // Setting the highWaterMark didn't seem to help that.
-    // I'm considering pulling in a util like aria2c for this.
-    // aria2c not only seems faster but it also manages partial downloads.
     const q: queueAsPromised<FeedItem> = fastq.promise(async (item) => {
         const file = Bun.file(item.inputFilePath);
         if (await file.exists()) {
