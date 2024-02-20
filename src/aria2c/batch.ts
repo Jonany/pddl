@@ -1,3 +1,5 @@
+// NOTE: Part of testing integration with aria2c.
+
 import { EOL } from 'node:os';
 import { join, normalize } from 'node:path';
 import { writeFile } from 'node:fs/promises';

@@ -1,3 +1,5 @@
+// NOTE: Part of testing integration with aria2c.
+
 const proc = Bun.spawn([
     'aria2c',
     '-j', '4',

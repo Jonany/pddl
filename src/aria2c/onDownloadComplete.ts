@@ -1,4 +1,6 @@
-import { removeFromBatchFile } from "../batch";
+// NOTE: Part of testing integration with aria2c.
+
+import { removeFromBatchFile } from "./batch";
 
 if (Bun.argv.length !== 5) {
     console.error(`Missing args from aria2c. Expected 3 args. Got ${Bun.argv.length - 2}.`);
