@@ -75,3 +75,20 @@ export const removeFromBatchFile = async (itemPath: string, outputPath: string):
         // await Bun.write(batchFile, newText);
     }
 }
+
+export const downloadBatch = async (workerLimit: number, outputPath: string): Promise<void> => {
+    const proc = Bun.spawn([
+        'aria2c',
+        '-j', workerLimit.toString(),
+        // '--on-download-complete', 'bin/onDownloadComplete',
+        '-i', outputPath + '/batch.txt',
+        '--auto-file-renaming=false',
+        '-d', '/'
+    ]);
+
+    console.log('aria2c started');
+
+    await proc.exited;
+
+    console.log('aria2c completed');
+}

@@ -24,7 +24,7 @@ export interface SavedItem extends FeedItem {
 }
 
 export const download = async (items: FeedItem[], workerLimit: number) => {
-    // const progressBar = startBar('Episodes', items.length);
+    const progressBar = startBar('Episodes', items.length);
     const stopWatch = new Date();
 
     let downloaded = 0;
@@ -39,11 +39,10 @@ export const download = async (items: FeedItem[], workerLimit: number) => {
     // I'm considering pulling in a util like aria2c for this.
     // aria2c not only seems faster but it also manages partial downloads.
     const q: queueAsPromised<FeedItem> = fastq.promise(async (item) => {
-        console.log(`Downloading ${item.inputFilePath}`);
         const file = Bun.file(item.inputFilePath);
         if (await file.exists()) {
             skipped++;
-            // progressBar.increment();
+            progressBar.increment();
             return;
         }
 
@@ -55,7 +54,7 @@ export const download = async (items: FeedItem[], workerLimit: number) => {
                 await finished(Readable.fromWeb(body, { highWaterMark: 1024 * 1024 }).pipe(stream));
             }
             downloaded++;
-            // progressBar.increment();
+            progressBar.increment();
         } catch (error) { }
     }, workerLimit * 2);
 
@@ -63,10 +62,9 @@ export const download = async (items: FeedItem[], workerLimit: number) => {
     // attempt to reduce the possibility of rate limiting
     // by podcast hosts.
     const sortedItems = durstenfeldShuffle(items);
-    console.log(`Shuffled ${sortedItems[0].title}, ${sortedItems[1].title}, ${sortedItems[3].title}`)
     await Promise.allSettled(sortedItems.map(async (i) => await q.push(i)));
 
-    // progressBar.stop();
+    progressBar.stop();
     console.log(
         `Downloaded ${downloaded} episodes in ${displayDuration(stopWatch)}. Skipped ${skipped} items.\n`
     );
