@@ -17,6 +17,7 @@ export interface Options {
     outFileExt: string;
     serveType: string;
     serveUrl: string;
+    skipConvert: boolean;
     workerLimit: number;
 }
 
@@ -32,6 +33,7 @@ const DEFAULT_OUTDIR: string = 'podcasts';
 const DEFAULT_OUTFILE_EXT: string = 'ogg';
 const DEFAULT_SERVE_TYPE: string = 'audio/ogg';
 const DEFAULT_SERVE_URL: string = 'https://host.nope.ts.net/podcasts';
+const DEFAULT_SKIP_CONVERT: boolean = false;
 const DEFAULT_WORKER_LIMIT: number = 1;
 
 /** 
@@ -78,6 +80,8 @@ export const getOptions = (): Options => {
     
     const serveUrl = Bun.env.PDDL_SERVE_URL ?? DEFAULT_SERVE_URL;
     const serveType = Bun.env.PDDL_SERVE_TYPE ?? DEFAULT_SERVE_TYPE;
+
+    const skipConvert = Bun.env.PDDL_SKIP_CONVERT === 'true';
     
     let workerLimit = DEFAULT_WORKER_LIMIT;
     const envWorkerLimit = Number.parseInt(Bun.env.PDDL_WORKER_LIMIT ?? '');
@@ -99,6 +103,7 @@ export const getOptions = (): Options => {
         outFileExt: outFileExt,
         serveType: serveType,
         serveUrl: serveUrl,
+        skipConvert: skipConvert,
         workerLimit: workerLimit,
     };
 }
