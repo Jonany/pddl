@@ -11,6 +11,7 @@ import { detox } from "./detox";
 import { displayDuration, startBar } from "./cli";
 import { DownloadOrder } from "./options";
 import type { ArchivedItem } from "./archive";
+import type { Opml } from "./opml";
 
 export interface FeedDownloadRequest {
     urls: string[];
@@ -26,6 +27,30 @@ export interface FeedItem {
     guid: string;
     inputFilePath: string;
 }
+
+export const getFeedsUrls = async (opmlFile: string, opmlBinPath: string): Promise<string[]> => {
+    const opmlFound = await Bun.file(opmlFile).exists();
+
+    if (!opmlFound) {
+        console.warn(`Feed file ${opmlFile} does not exist.`);
+        return [];
+    }
+
+    console.log(`Using feed file ${opmlFile}\n`);
+    const proc = Bun.spawnSync([opmlBinPath, "--file", opmlFile, "--json"]);
+    const feedsJson = proc.stdout.toString();
+
+    if (feedsJson.length == 0) {
+        console.warn('Feed file is empty.');
+        return [];
+    }
+
+    const feeds: Opml = JSON.parse(feedsJson);
+    const feedUrls = feeds.body.outlines.map(o => o.xml_url);
+    return feedUrls;
+}
+
+
 /** 
 * Returns a list of podcast episodes.
 */

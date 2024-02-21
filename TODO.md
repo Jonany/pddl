@@ -26,3 +26,4 @@ Libraries to try:
 - Improve retry handling and error reporting for fetching feeds and episodes.
 - Include metadata in feed item object so that it can be written to the audio file and or a separate metadata file.
 - Include feed file index in feed item object to shorten find and replace operation time.
+- Consider isolating all side effect code into separate functions to make testing easier.
