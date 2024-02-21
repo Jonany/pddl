@@ -14,7 +14,7 @@ import type { ArchivedItem } from "./archive";
 import type { Opml } from "./opml";
 
 export interface FeedDownloadRequest {
-    urls: string[];
+    feeds: PodcastFeed[];
     outdir: string;
     episodeLimit: number;
     episodeOffset: number;
@@ -28,7 +28,12 @@ export interface FeedItem {
     inputFilePath: string;
 }
 
-export const getFeedUrls = async (opmlFile: string, opmlBinPath: string): Promise<string[]> => {
+export interface PodcastFeed {
+    name: string;
+    xmlUrl: string;
+}
+
+export const getFeedUrls = async (opmlFile: string, opmlBinPath: string): Promise<PodcastFeed[]> => {
     const opmlFound = await Bun.file(opmlFile).exists();
 
     if (!opmlFound) {
@@ -38,16 +43,16 @@ export const getFeedUrls = async (opmlFile: string, opmlBinPath: string): Promis
 
     console.log(`Using feed file ${opmlFile}\n`);
     const proc = Bun.spawnSync([opmlBinPath, "--file", opmlFile, "--json"]);
-    const feedsJson = proc.stdout.toString();
+    const opmlJson = proc.stdout.toString();
 
-    if (feedsJson.length == 0) {
+    if (opmlJson.length == 0) {
         console.error('\n**** Feed file is empty ****\n');
         return [];
     }
 
-    const feeds: Opml = JSON.parse(feedsJson);
-    const feedUrls = feeds.body.outlines.map(o => o.xml_url);
-    return feedUrls;
+    const opmlObj: Opml = JSON.parse(opmlJson);
+
+    return opmlObj.body.outlines.map(o => ({ name: o.text, xmlUrl: o.xml_url }));
 }
 
 
@@ -56,70 +61,70 @@ export const getFeedUrls = async (opmlFile: string, opmlBinPath: string): Promis
 */
 export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedItem[]> => {
     const parser = new Parser();
-    const feedCount = request.urls.length;
+    const feedCount = request.feeds.length;
 
-    const progressBar = startBar('Feeds', feedCount);
+    const progressBar = startBar('Feeds downloaded', feedCount);
     const stopWatch = new Date();
 
     let itemsToDownload: FeedItem[] = [];
-    for (const feedUrl of request.urls) {
-        let feed;
+    for (const feed of request.feeds) {
+        const feedFolder = `${request.outdir}/${detox(feed.name)}`;
+
+        let feedObj;
         try {
-            const response = await fetch(feedUrl);
+            const response = await fetch(feed.xmlUrl);
             if (response.ok) {
                 const xml = await response.text();
-                feed = await parser.parseString(xml);
+                feedObj = await parser.parseString(xml);
+
+                await Bun.write(`${feedFolder}/feed.xml`, xml, { createPath: true, });
             }
         } catch (error) { }
 
-        if (feed?.title) {
-            const feedName = detox(feed.title);
-            const feedFolder = `${request.outdir}/${feedName}`;
-
-            if (!existsSync(feedFolder)) {
-                await mkdir(feedFolder, { recursive: true });
-            }
-
-            const feedFile = Bun.file(`${feedFolder}/feed.xml`);
-            const response = await fetch(feedUrl);
-            await Bun.write(feedFile, response);
-
-            const defaultPubDate = new Date();
-
-            const feedItems = feed.items
-                // Remove invalid items
-                .filter(item =>
-                    (item.title ?? '').length > 1 &&
-                    (item.enclosure?.url || item.link || '').length > 1 &&
-                    (item.guid ?? '').length > 1
-                )
-                // Build needed data
-                .map(item => {
-                    const url = (item.enclosure?.url || item.link)!;
-                    const date = typeof item.isoDate === 'undefined' ? defaultPubDate : parseISO(item.isoDate);
-                    const ext = url.substring(url.lastIndexOf('.') + 1);
-                    const fileName = detox(`${format(date, 'yyyy-MM-dd')}_${item.title}`);
-                    const path = `${feedFolder}/${fileName}.${ext}`;
-                    const result: FeedItem = {
-                        title: item.title!,
-                        url: url,
-                        date: date,
-                        guid: item.guid!,
-                        inputFilePath: path,
-                    };
-
-                    return result;
-                })
-                .sort((a, b) => request.downloadOrder == DownloadOrder.OldestFirst
-                    ? compareAsc(a.date, b.date)
-                    : compareDesc(a.date, b.date)
-                )
-                .splice(request.episodeOffset, request.episodeLimit);
-
-            itemsToDownload = [...itemsToDownload, ...feedItems];
-            
-            progressBar.increment();
+        if (feedObj == undefined) {
+            continue;
         }
+
+
+        if (!existsSync(feedFolder)) {
+            await mkdir(feedFolder, { recursive: true });
+        }
+
+        const defaultPubDate = new Date();
+
+        const feedItems = feedObj.items
+            // Remove invalid items
+            .filter(item =>
+                (item.title ?? '').length > 1 &&
+                (item.enclosure?.url || item.link || '').length > 1 &&
+                (item.guid ?? '').length > 1
+            )
+            // Build needed data
+            .map(item => {
+                const url = (item.enclosure?.url || item.link)!;
+                const date = typeof item.isoDate === 'undefined' ? defaultPubDate : parseISO(item.isoDate);
+                const ext = url.substring(url.lastIndexOf('.') + 1);
+                const fileName = detox(`${format(date, 'yyyy-MM-dd')}_${item.title}`);
+                const path = `${feedFolder}/${fileName}.${ext}`;
+                const result: FeedItem = {
+                    title: item.title!,
+                    url: url,
+                    date: date,
+                    guid: item.guid!,
+                    inputFilePath: path,
+                };
+
+                return result;
+            })
+            .sort((a, b) => request.downloadOrder == DownloadOrder.OldestFirst
+                ? compareAsc(a.date, b.date)
+                : compareDesc(a.date, b.date)
+            )
+            .splice(request.episodeOffset, request.episodeLimit);
+
+        itemsToDownload = [...itemsToDownload, ...feedItems];
+
+        progressBar.increment();
 
     }
 
@@ -138,7 +143,7 @@ export const updateFeeds = async (
     const q: queueAsPromised<UpdateFeedTask> = fastq.promise(updateFeed, workerLimit);
     const feedFolders: string[] = [...new Set(items.map(i => dirname(i.filePath)))];
 
-    const progressBar = startBar('Feeds', feedFolders.length);
+    const progressBar = startBar('Feeds updated', feedFolders.length);
     const stopWatch = new Date();
 
     await Promise.allSettled(feedFolders.map(async (f) => {

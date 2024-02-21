@@ -19,6 +19,7 @@ Libraries to try:
 
 ## Miscellaneous
 
+- [x] Use OPML feed name instead of RSS feed title.
 - Download podcast cover picture.
 - Implement OPML import in TypeScript/Bun.
 - Implement schedule loop.

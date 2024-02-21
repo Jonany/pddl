@@ -31,7 +31,7 @@ export const convert = async (
     }
 
     const stopWatch = new Date();
-    const progressBar = startBar('Episodes', items.length);
+    const progressBar = startBar('Episodes converted', items.length);
 
     let saved: SavedItem[] = [];
     let converted = 0;

@@ -12,7 +12,7 @@ export interface SavedItem extends FeedItem {
 }
 
 export const download = async (items: FeedItem[], workerLimit: number) => {
-    const progressBar = startBar('Episodes', items.length);
+    const progressBar = startBar('Episodes downloaded', items.length);
     const stopWatch = new Date();
 
     let downloaded = 0;
