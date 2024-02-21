@@ -33,7 +33,6 @@ const DEFAULT_OUTDIR: string = 'podcasts';
 const DEFAULT_OUTFILE_EXT: string = 'ogg';
 const DEFAULT_SERVE_TYPE: string = 'audio/ogg';
 const DEFAULT_SERVE_URL: string = 'https://host.nope.ts.net/podcasts';
-const DEFAULT_SKIP_CONVERT: boolean = false;
 const DEFAULT_WORKER_LIMIT: number = 1;
 
 /** 
@@ -55,7 +54,7 @@ export const getOptions = (): Options => {
 
     let feedEpisodeLimit = DEFAULT_EPISODE_LIMIT;
     const envEpisodeLimit = Number.parseInt(Bun.env.PDDL_EPISODE_LIMIT ?? '');
-    if (Number.isFinite(envEpisodeLimit) && envEpisodeLimit > 0) {
+    if (Number.isFinite(envEpisodeLimit) && envEpisodeLimit >= 0) {
         feedEpisodeLimit = envEpisodeLimit;
     }
 

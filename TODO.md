@@ -19,7 +19,6 @@ Libraries to try:
 
 ## Miscellaneous
 
-- [x] Use OPML feed name instead of RSS feed title.
 - Download podcast cover picture.
 - Implement OPML import in TypeScript/Bun.
 - Implement schedule loop.
@@ -29,3 +28,6 @@ Libraries to try:
 - Include metadata in feed item object so that it can be written to the audio file and or a separate metadata file.
 - Include feed file index in feed item object to shorten find and replace operation time.
 - Consider isolating all side effect code into separate functions to make testing easier.
+- Validate whether exists check for feed folder can be removed now that I'm always writing the feed file.
+- [x] Use OPML feed name instead of RSS feed title.
+- [x] Allow episode limit of 0.

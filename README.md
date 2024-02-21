@@ -16,6 +16,7 @@ A file-first podcast manager built with TypeScript and Bun/Node.js and designed 
 - [ ] Customizable folder names.
 - [ ] Customizable file/episode names.
 - [ ] Customizable log levels.
+- [ ] Per-podcast transcode settings.
 
 
 ## Running

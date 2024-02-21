@@ -85,7 +85,6 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
             continue;
         }
 
-
         if (!existsSync(feedFolder)) {
             await mkdir(feedFolder, { recursive: true });
         }
