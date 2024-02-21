@@ -19,6 +19,7 @@ Libraries to try:
 
 ## Miscellaneous
 
+- Download podcast cover picture.
 - Implement OPML import in TypeScript/Bun.
 - Implement schedule loop.
 - Implement adjustable logging.

@@ -1,5 +1,5 @@
 import { download } from "./src/download";
-import { type FeedItem, getFeedItems, updateFeeds, getFeedsUrls } from "./src/feed";
+import { type FeedItem, getFeedItems, updateFeeds, getFeedUrls } from "./src/feed";
 import { getOptions } from "./src/options";
 import { archive, getArchived } from "./src/archive";
 import { convert } from "./src/convert";
@@ -8,7 +8,7 @@ import { convert } from "./src/convert";
 const options = getOptions();
 
 // FETCH
-const feedUrls = await getFeedsUrls(options.opmlFile, options.opmlBinPath);
+const feedUrls = await getFeedUrls(options.opmlFile, options.opmlBinPath);
 const feedItems: FeedItem[] = await getFeedItems({
     urls: feedUrls,
     outdir: options.outdir,

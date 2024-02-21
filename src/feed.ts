@@ -28,11 +28,11 @@ export interface FeedItem {
     inputFilePath: string;
 }
 
-export const getFeedsUrls = async (opmlFile: string, opmlBinPath: string): Promise<string[]> => {
+export const getFeedUrls = async (opmlFile: string, opmlBinPath: string): Promise<string[]> => {
     const opmlFound = await Bun.file(opmlFile).exists();
 
     if (!opmlFound) {
-        console.warn(`Feed file ${opmlFile} does not exist.`);
+        console.error(`\n**** Feed file ${opmlFile} does not exist ****\n`);
         return [];
     }
 
@@ -41,7 +41,7 @@ export const getFeedsUrls = async (opmlFile: string, opmlBinPath: string): Promi
     const feedsJson = proc.stdout.toString();
 
     if (feedsJson.length == 0) {
-        console.warn('Feed file is empty.');
+        console.error('\n**** Feed file is empty ****\n');
         return [];
     }
 
