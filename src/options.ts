@@ -9,10 +9,10 @@ export interface Options {
     feedEpisodeLimit: number;
     feedEpisodeOffset: number;
     ffmpegArgs: string;
-    ffmpegPath: string;
+    ffmpegBinPath: string;
     deleteDownloaded: boolean;
     opmlFile: string;
-    opmlPath: string;
+    opmlBinPath: string;
     outdir: string;
     outFileExt: string;
     serveType: string;
@@ -92,9 +92,9 @@ export const getOptions = (): Options => {
         feedEpisodeOffset: feedEpisodeOffset,
         opmlFile: opmlFile,
         ffmpegArgs: ffmpegArgs,
-        ffmpegPath: ffmpegPath,
+        ffmpegBinPath: ffmpegPath,
         deleteDownloaded: deleteDownloaded,
-        opmlPath: opmlBinPath,
+        opmlBinPath: opmlBinPath,
         outdir: outdir,
         outFileExt: outFileExt,
         serveType: serveType,

@@ -8,7 +8,7 @@ import { convert } from "./src/convert";
 const options = getOptions();
 
 // FETCH
-const feedUrls = await getFeedsUrls(options.opmlFile, options.opmlPath);
+const feedUrls = await getFeedsUrls(options.opmlFile, options.opmlBinPath);
 const feedItems: FeedItem[] = await getFeedItems({
     urls: feedUrls,
     outdir: options.outdir,
@@ -27,7 +27,7 @@ await download(toDownload, options.workerLimit);
 const savedItems = await convert(
     toDownload,
     options.outFileExt,
-    options.ffmpegPath,
+    options.ffmpegBinPath,
     options.workerLimit,
     options.deleteDownloaded,
     options.ffmpegArgs,
