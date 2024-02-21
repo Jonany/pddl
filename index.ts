@@ -1,8 +1,9 @@
 import type { Opml } from "./src/opml";
-import { convert, download } from "./src/save";
+import { download } from "./src/download";
 import { type FeedItem, getFeedItems, updateFeeds } from "./src/feed";
 import { getOptions } from "./src/options";
 import { archive, getArchived } from "./src/archive";
+import { convert } from "./src/convert";
 
 console.log('\n\nLoading OPML file');
 

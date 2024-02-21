@@ -26,7 +26,9 @@ export interface FeedItem {
     guid: string;
     inputFilePath: string;
 }
-
+/** 
+* Returns a list of podcast episodes.
+*/
 export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedItem[]> => {
     const parser = new Parser();
     const feedCount = request.urls.length;

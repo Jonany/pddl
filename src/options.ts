@@ -34,6 +34,9 @@ const DEFAULT_SERVE_TYPE: string = 'audio/ogg';
 const DEFAULT_SERVE_URL: string = 'https://host.nope.ts.net/podcasts';
 const DEFAULT_WORKER_LIMIT: number = 1;
 
+/** 
+* Returns options configured through the environment or defaults if no options are found.
+*/
 export const getOptions = (): Options => {
     const archiveFile = Bun.env.PDDL_ARCHIVE_FILE ?? DEFAULT_ARCHIVE_FILE;    
 

@@ -1,5 +1,5 @@
 import { EOL } from "node:os";
-import type { SavedItem } from "./save";
+import type { SavedItem } from "./download";
 
 const SEPARATOR: string = '|';
 

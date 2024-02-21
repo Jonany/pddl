@@ -6,7 +6,7 @@ A file-first podcast manager built with TypeScript and Bun/Node.js and designed 
 ## Roadmap
 
 - [x] Import an OPML feed of podcasts.
-- [x] Download podcast feed and episodes.
+- [x] Download podcast feeds and episodes.
 - [x] Transcode episodes with FFMPEG.
 - [x] Record (archive) list of downloaded episodes.
 - [x] Update podcast feed file to point to local files.
