@@ -1,0 +1,98 @@
+# This config file uses TOML. See https://toml.io/en/ for more details.
+
+
+[feed]
+
+# Absolute path to folder where podcasts will be downloaded.
+# You can use $PWD for a path that is relative to the current directory.
+pddl_folder = "$PWD/pods"
+
+# Name of the file in pddl_folder or absolute path to file.
+# Absolute path to the OPML file of podcast feeds. The extension shouldn"t matter as long as it is in OPML format.
+# You can use $PWD for a path that is relative to the current directory.
+opml_file = "$PWD/pods/feeds.opml"
+
+# Name of the file in pddl_folder or absolute path to file.
+# Where to save the archive file.
+# You can use $PWD for a path that is relative to the current directory.
+archive_file = "$PWD/pods/archive.txt"
+
+
+[system]
+
+# Limit the number of sub-processes used for download, converting, and archiving.
+# Setting this higher should speed things up but will consume more CPU and RAM.
+worker_limit = 2
+
+# Absolute path to the opml bin. Set to opml to look in $PATH.
+# You can use $PWD for a path that is relative to the current directory.
+# See https://github.com/Holllo/opml/releases to download the binary.
+opml_bin = "$PWD/lib/opml"
+
+# Looks for an ffmpeg bin in the executing directory or in $PATH.
+# You can use $PWD for a path that is relative to the current directory.
+# If you already have ffmpeg installed on your system, using the one included in the lib file might not work
+ffmpeg_bin = "ffmpeg"
+
+
+# These are default/global settings. Changing these will effect all podcasts.
+# If you want to have specific settings for specific podcasts, just copy the default settings
+# including the [[podcasts]] line at the beginning. Then tweak the settings to your heart's content.
+# Any settings you leave out will use the defaults. See further down for some examples.
+[[podcasts]]
+name = "pddl_default"
+
+# Limit the number of episodes downloaded per podcast.
+download.episode_limit = 1
+
+# Start downloading X number of episodes from the top of the feed.
+download.episode_offset = 0
+
+# asc for newest first, desc for oldest first
+download.download_order = "asc"
+
+# Set to true to skip the conversion step.
+convert.skip_convert = true
+
+# Runs ffmpeg without logs and outputs an .ogg file that is the same quality 
+# as a 48k MP3 (at least to my ears) but is 20%-30% of the original size.
+# Remove -loglevel quiet to see FFMPEG logs.
+#  -ar 24000 -ac 1 -fps_mode vfr
+convert.ffmpeg_args = "-loglevel warning -hide_banner -nostats -c:a libopus -b:a 48k -f ogg"
+
+# Make sure this aligns with serve.mime_type.
+convert.outfile_ext = "ogg"
+
+# Set to false if you want to keep the original episode files.
+convert.delete_downloaded = true
+
+# Used to replace the existing episode URL and media type with the transcoded one.
+# It's up to you to serve it but I suggest `tailscale serve`. It is a thing of beauty.
+serve.url = "https://host.nope.ts.net/podcasts"
+
+# Needs to match format used by convert.outfile_ext.
+# Generally, this will be the same as the file extension ex., "mp3" and "audio/mp3" but not always.
+# See https://www.iana.org/assignments/media-types/media-types.xhtml#audio for a full list of MIME types.
+serve.mime_type = "audio/ogg"
+
+
+# Example #1
+#   "A History of Rock Music in 500 Songs" and "Sticky Notes: The Classical Music Podcast" are music podcasts
+#   so you want to keep the bit-rate at 48k to preserve the listening experience.
+#   [[podcasts]]
+#   name = [ "A History of Rock Music in 500 Songs", "Sticky Notes: The Classical Music Podcast" ]
+#   convert.ffmpeg_args = "-loglevel warning -hide_banner -nostats -c:a libopus -b:a 48k -f ogg"
+
+# Example #2
+#   You want to listen to "Stories Are Soul Food" on your iDevice which prefers the M4A (AAC) format. And you
+#   want to download all the available episodes.
+#   Notice this name doesn't have brackets around it. Brackets are only needed if you want to use these settings
+#   for multiple podcasts, though you can still use them for a single podcast if you want.
+#
+#   NOTE: Make sure to separate each override section with [[podcasts]] so pddl knows it's a new section.
+#
+#   [[podcasts]]
+#   name = "Stories Are Soul Food"
+#   convert.ffmpeg_args = "-loglevel warning -hide_banner -nostats -c:a libaac -b:a 48k -f aac"
+#   serve.mime_type = "audio/m4a"
+#   download.episode_limit = 9001
