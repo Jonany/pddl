@@ -1,6 +1,6 @@
 # pddl
 
-A file-first podcast manager built with TypeScript and Bun/Node.js and designed for folks who like to manage and self-host the content they enjoy.
+A file-first podcast manager built with TypeScript and Bun/Node.js and designed for folks who like to manage and self-host the content they enjoy. What differentiates pddl from similar apps is the ability to transcode episodes and then regenerate the podcast feeds using those transcoded episodes.
 
 
 ## Roadmap
