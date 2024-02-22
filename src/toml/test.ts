@@ -42,7 +42,7 @@ export interface Podcast {
 }
 
 
-const toml = await Bun.file('/home/jonany/src/pddl/pddl.config.txt').text();
+const toml = await Bun.file('/home/jonany/src/pddl/toml/pddl.config.txt').text();
 
 // const data: Config = load(toml) as Config;
 const data: any = load(toml);

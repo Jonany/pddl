@@ -28,6 +28,8 @@ Run with `bun run index.ts`. Or generate a [single-file executable](https://bun.
 
 pddl uses [Bun environment variables](https://bun.sh/docs/runtime/env) for configuration. See [example.env](./example.env) for valid options.
 
+A much more elegant solution using TOML is in the works.
+
 
 ## Serving
 
