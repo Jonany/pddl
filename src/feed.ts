@@ -100,7 +100,7 @@ export const getFeedItems = async (request: FeedDownloadRequest): Promise<FeedIt
             )
             // Build needed data
             .map(item => {
-                const url = (item.enclosure?.url || item.link)!;
+                const url = ((item.enclosure?.url || item.link)!).split('?')[0];
                 const date = typeof item.isoDate === 'undefined' ? defaultPubDate : parseISO(item.isoDate);
                 const ext = url.substring(url.lastIndexOf('.') + 1);
                 const fileName = detox(`${format(date, 'yyyy-MM-dd')}_${item.title}`);
