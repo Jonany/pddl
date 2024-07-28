@@ -1,7 +1,3 @@
-
-import { createWriteStream } from "node:fs";
-import { Readable } from "node:stream";
-import { finished } from "node:stream/promises";
 import fastq from "fastq";
 import type { queueAsPromised } from "fastq";
 import { displayDuration, startBar } from "./cli";
@@ -27,12 +23,9 @@ export const download = async (items: FeedItem[], workerLimit: number) => {
         }
 
         try {
-            const stream = createWriteStream(item.inputFilePath);
-            const { body } = await fetch(item.url);
+            const result = await fetch(item.url);
+            await Bun.write(item.inputFilePath, result);
 
-            if (body !== null) {
-                await finished(Readable.fromWeb(body, { highWaterMark: 1024 * 1024 }).pipe(stream));
-            }
             downloaded++;
             progressBar.increment();
         } catch (error) { }
