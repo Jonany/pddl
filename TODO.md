@@ -19,15 +19,17 @@ Libraries to try:
 
 ## Miscellaneous
 
-- Download podcast cover picture.
-- Implement OPML import in TypeScript/Bun.
-- Implement schedule loop.
-- Implement adjustable logging.
-- Consolidate CLI related side-effects to index. This should allow for easier handling of where logs/process are printed.
-- Improve retry handling and error reporting for fetching feeds and episodes.
-- Include metadata in feed item object so that it can be written to the audio file and or a separate metadata file.
-- Include feed file index in feed item object to shorten find and replace operation time.
-- Consider isolating all side effect code into separate functions to make testing easier.
-- Validate whether exists check for feed folder can be removed now that I'm always writing the feed file.
+- [ ] Implement a more robust url parser with unit tests.
+- [ ] Implement a way of checking for un-converted files and adding them to convert queue.
+- [ ] Download podcast cover picture.
+- [ ] Implement OPML import in TypeScript/Bun.
+- [ ] Implement schedule loop.
+- [ ] Implement adjustable logging.
+- [ ] Consolidate CLI related side-effects to index. This should allow for easier handling of where logs/process are printed.
+- [ ] Improve retry handling and error reporting for fetching feeds and episodes.
+- [ ] Include metadata in feed item object so that it can be written to the audio file and or a separate metadata file.
+- [ ] Include feed file index in feed item object to shorten find and replace operation time.
+- [ ] Consider isolating all side effect code into separate functions to make testing easier.
+- [ ] Validate whether exists check for feed folder can be removed now that I'm always writing the feed file.
 - [x] Use OPML feed name instead of RSS feed title.
 - [x] Allow episode limit of 0.
