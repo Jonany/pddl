@@ -31,25 +31,10 @@ export const download = async (items: FeedItem[], workerLimit: number) => {
         } catch (error) { }
     }, workerLimit * 2);
 
-    // Running a Durstenfeld shuffle on these items in an 
-    // attempt to reduce the possibility of rate limiting
-    // by podcast hosts.
-    const sortedItems = durstenfeldShuffle(items);
-    await Promise.allSettled(sortedItems.map(async (i) => await q.push(i)));
+    await Promise.allSettled(items.map(async (i) => await q.push(i)));
 
     progressBar.stop();
     console.log(
         `Downloaded ${downloaded} episodes in ${displayDuration(stopWatch)}. Skipped ${skipped} already downloaded items.\n`
     );
-}
-
-// Cred goes to a comment under https://stackoverflow.com/a/12646864
-const durstenfeldShuffle = <T>(array: T[]): T[] => { 
-    const arrayCopy = [...array];
-    
-    for (let i = arrayCopy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arrayCopy[i], arrayCopy[j]] = [arrayCopy[j], arrayCopy[i]];
-    }
-    return arrayCopy;
 }
